@@ -2,6 +2,9 @@
   "name": "my-app",
   "version": "0.1.0",
   "private": true,
+  "resolutions": {
+    "fast-uri": "^3.1.5"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
