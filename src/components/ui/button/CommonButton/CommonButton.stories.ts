@@ -8,7 +8,7 @@ const meta = {
     layout: 'centered',
   },
   argTypes: {
-    backgroundColor: { control: 'color' },
+    variant: { control: 'select', options: ['primary', 'secondary', 'red', 'outline', 'ghost', 'link'] },
   },
 } satisfies Meta<typeof CommonButton>;
 
@@ -17,6 +17,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    text: 'Button',
+    children: 'Button',
   },
 };

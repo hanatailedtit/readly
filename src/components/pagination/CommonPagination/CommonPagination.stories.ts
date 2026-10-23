@@ -16,6 +16,7 @@ export const Default: Story = {
   args: {
     totalCount: 10,
     viewButtonCount: 5,
-    clickButton: () => { }
+    pagination: 0,
+    onClickPagination: () => { }
   },
 };

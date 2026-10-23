@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import ProfileImage from './ProfileImage';
-import defaultProfileImage from 'public/images/users/default-profile-image.webp';
 
 const meta = {
   title: 'UI/Image/ProfileImage',
@@ -16,6 +15,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    imageSrc: defaultProfileImage
+    imageSrc: '/images/users/default-profile-image.webp'
   },
 };

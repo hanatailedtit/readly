@@ -5,3 +5,7 @@ export type UserInfoDto = {
   nickname: string;
   create_at: string
 }
+
+export type EditUserNicknameRequest = {
+  nickname: string;
+}

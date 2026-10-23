@@ -1,52 +1,138 @@
-import { parseDomSizeValue } from '@/utils/string.utils'
-import { ChangeEvent, CSSProperties, useState, KeyboardEvent } from 'react'
+'use client';
 
-export type CommonInputProps = {
-  defaultValue?: string
-  width?: string | number
-  height?: string | number
-  borderRadius?: string | number
-  padding?: string | number
-  placeholder?: string
-  style?: CSSProperties
-  setInputValue: (value: string) => void
-  pressEnter?: () => void
-}
+import { cn } from '@/utils/class-name.utils';
+import { cva } from 'class-variance-authority';
+import {
+  ChangeEvent,
+  forwardRef,
+  HTMLAttributes,
+  KeyboardEvent,
+  memo,
+  ReactNode,
+  Ref,
+  useMemo,
+} from 'react';
+import { ClassNameValue } from 'tailwind-merge';
 
-export default function CommonInput({
-  defaultValue = '',
-  width = '100%',
-  height = 40,
-  borderRadius = 8,
-  padding = 8,
-  placeholder,
-  style,
-  setInputValue,
-  pressEnter,
-}: CommonInputProps) {
-  const [value, setValue] = useState(defaultValue)
-  const changeInputValue = (e: ChangeEvent) => {
-    const element = e.target as HTMLInputElement
-    setValue(element.value)
-    setInputValue(element.value)
-  }
-  const handleKeyUp = (e: KeyboardEvent) => {
-    if (pressEnter && e.code === 'Enter') pressEnter()
-  }
-  return (
-    <input
-      className="border border-gray focus:outline-main text-black"
-      style={{
-        width: parseDomSizeValue(width),
-        height: parseDomSizeValue(height),
-        borderRadius: parseDomSizeValue(borderRadius),
-        padding: parseDomSizeValue(padding),
-        ...style,
-      }}
-      placeholder={placeholder}
-      value={value}
-      onChange={changeInputValue}
-      onKeyUp={handleKeyUp}
-    />
-  )
-}
+const commonInputWrapperVariants = cva(
+  [
+    'relative',
+    'border',
+    'border-gray',
+    'focus:outline-main',
+    'rounded-[8px]',
+    'p-[8px]',
+    'flex',
+    'flex-row',
+    'items-center',
+    'border-gray',
+    'gap-x-[4px]',
+    'gap-y-[4px]',
+    'flex-wrap',
+  ],
+  {
+    variants: {
+      isAlert: {
+        true: 'border-red',
+      },
+    },
+    defaultVariants: {
+      isAlert: false,
+    },
+  },
+);
+
+type CommonInputProps = {
+  value?: string;
+  alertText?: string;
+  placeholder?: string;
+  className?: ClassNameValue;
+  innerClassName?: ClassNameValue;
+  type?: string;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
+  children?: ReactNode;
+  onChangeValue?: (value: string) => void;
+  onEnter?: () => void;
+} & HTMLAttributes<HTMLInputElement>;
+
+const CommonInput = forwardRef(
+  (
+    {
+      value,
+      alertText,
+      placeholder,
+      className,
+      innerClassName,
+      type,
+      leftIcon,
+      rightIcon,
+      children,
+      onChangeValue,
+      onEnter,
+      ...rest
+    }: CommonInputProps,
+    ref: Ref<HTMLInputElement>,
+  ) => {
+    const handleChangeInputValue = (e: ChangeEvent) => {
+      if (!onChangeValue) return;
+      const element = e.target as HTMLInputElement;
+      onChangeValue(element.value);
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (onEnter && e.code === 'Enter') onEnter();
+    };
+
+    const divClassName = useMemo(
+      () =>
+        cn(
+          commonInputWrapperVariants({ isAlert: Boolean(alertText) }),
+          className,
+        ),
+      [className, alertText],
+    );
+
+    const inputClassName = useMemo(
+      () =>
+        cn(
+          [
+            'focus:outline-none',
+            'text-black',
+            'w-full',
+            'h-full',
+            'flex-1',
+            'bg-transparent',
+          ],
+          innerClassName,
+        ),
+      [innerClassName],
+    );
+
+    return (
+      <div className={divClassName}>
+        {leftIcon && leftIcon}
+        {children}
+        <input
+          className={inputClassName}
+          onChange={handleChangeInputValue}
+          onKeyUp={handleKeyUp}
+          type={type}
+          value={value}
+          placeholder={placeholder}
+          ref={ref}
+          {...rest}
+        />
+        {rightIcon && rightIcon}
+        <p className="text-md text-red absolute bottom-[-20px] whitespace-nowrap">
+          {alertText}
+        </p>
+      </div>
+    );
+  },
+);
+
+CommonInput.displayName = 'CommonInput';
+const MemoizedCommonInput = memo(CommonInput);
+
+export { commonInputWrapperVariants, MemoizedCommonInput as default };
+export type { CommonInputProps };

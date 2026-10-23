@@ -1,0 +1,12 @@
+.common-toast {
+  transition: right 0.3s;
+}
+
+@keyframes show-toast {
+  from {
+    right: -280px;
+  }
+  to {
+    right: 16px;
+  }
+}
