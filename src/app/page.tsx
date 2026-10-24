@@ -1,101 +1,84 @@
-'use client';
-
-import BookRankList from '@/components/book/BookRankList/BookRankList';
-import BookSummaryList from '@/components/book/BookSummaryList/BookSummaryList';
-import SearchBookSummary from '@/components/book/SearchBookSummary/SearchBookSummary';
-import { useGetBookSummaryListQuery } from '@/service/book.service';
-import CommonDivider from '@/components/ui/divider/CommonDivider';
-import CommonDropdown from '@/components/ui/dropdown/CommonDropdown/CommonDropdown';
-import CommonDropdownInner from '@/components/ui/dropdown/CommonDropdownInner/CommonDropdownInner';
-import CommonDropdownItem from '@/components/ui/dropdown/CommonDropdownItem/CommonDropdownItem';
-import type { CommonDropdownItemProps } from '@/components/ui/dropdown/CommonDropdownItem/CommonDropdownItem';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useMemo } from 'react';
-
-const orderList: CommonDropdownItemProps[] = [
-  {
-    value: 'desc',
-    children: '최신순',
-  },
-  {
-    value: 'asc',
-    children: '등록순',
-  },
-  {
-    value: 'view',
-    children: '조회순',
-  },
-  {
-    value: 'like',
-    children: '좋아요순',
-  },
-];
-
+"use client";
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { useRecordFeed } from "@/service/library.service";
+import {
+  ListControls,
+  RecordGrid,
+  LoadError,
+  useListState,
+  PageNumbers,
+} from "@/components/records/record-list";
 export default function Home() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const categoryId = useMemo(
-    () => searchParams.get('category_id'),
-    [searchParams],
-  );
-  const order = useMemo(
-    () => searchParams.get('order') || 'desc',
-    [searchParams],
-  );
-  const dropdownLabel = useMemo(
-    () => orderList.find((item) => item.value === order)?.children || '최신순',
-    [order],
-  );
-
-  const {
-    data: listData,
-    isFetching: listFetching,
-    fetchNextPage,
-  } = useGetBookSummaryListQuery({
-    category_id: categoryId ? Number(categoryId) : null,
-    order,
-    limit: 16,
-  });
-
-  const currentParams = new URLSearchParams(searchParams.toString());
-
-  const changeOrderValue = (value: string) => {
-    currentParams.set('order', value);
-    router.push(`?${currentParams.toString()}`);
-  };
-
+  const list = useListState("grid"),
+    query = useRecordFeed({ page: list.page, order: list.order });
   return (
-    <div className="flex flex-col gap-y-[32px]">
-      <BookRankList />
-      <CommonDivider />
-      <div className="flex flex-col gap-y-[16px]">
-        <div className="w-full flex flex-row justify-between">
-          <p className="text-lg font-bold mb-[16px]">책 요약</p>
-          <CommonDropdown
-            value={order}
-            onChange={changeOrderValue}
-            label={dropdownLabel}
-          >
-            <CommonDropdownInner>
-              {orderList.map((item) => (
-                <CommonDropdownItem
-                  value={item.value}
-                  key={item.value}
-                >
-                  {item.children}
-                </CommonDropdownItem>
-              ))}
-            </CommonDropdownInner>
-          </CommonDropdown>
+    <div className="space-y-8">
+      <section
+        id="about"
+        className="grid items-center gap-8 rounded-[20px] bg-muted p-6 sm:p-8 lg:grid-cols-[1.25fr_1fr]"
+      >
+        <div className="space-y-6">
+          <p className="text-sm font-semibold text-muted-foreground">
+            읽고 남은 마음을 모으는 곳
+          </p>
+          <h1 className="font-display text-[28px] font-bold leading-[1.5] sm:text-[42px]">
+            읽고 난 뒤에도,
+            <br />
+            이야기는 계속되니까.
+          </h1>
+          <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
+            좋아하는 문장부터 오래 남은 생각까지.
+            <br />
+            나의 기록이 누군가의 다음 책이 됩니다.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            책을 고르고 · 마음을 남기고 · 서로를 읽어요
+          </p>
         </div>
-        <SearchBookSummary />
-
-        <BookSummaryList
-          data={listData?.pages.flatMap((item) => item.data) || null}
-          isFetching={listFetching}
-          fetchNextPage={fetchNextPage}
+        <Image
+          src="/brand/reading-illustration.svg"
+          alt="펼친 책에 담긴 독서 기록"
+          width={460}
+          height={300}
+          priority
+          className="mx-auto h-auto w-full max-w-[460px]"
         />
-      </div>
+      </section>
+      <section className="flex flex-col gap-4 rounded-sm border px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-bold sm:text-xl">
+            지금 독서 기록을 남겨보세요
+          </h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            한 줄의 감상도 좋아요. 오늘 읽은 책에서 시작해보세요.
+          </p>
+        </div>
+        <Button asChild className="sm:min-w-[168px]">
+          <Link href="/summary/create">기록 남기기</Link>
+        </Button>
+      </section>
+      <section className="space-y-6">
+        <ListControls title="함께 읽는 독서 기록" {...list} />
+        {query.isError ? (
+          <LoadError retry={query.refetch} />
+        ) : (
+          <RecordGrid
+            records={query.data?.records || []}
+            loading={query.isLoading}
+            view={list.view}
+          />
+        )}
+        <PageNumbers
+          page={list.page}
+          total={query.data?.total || 0}
+          onChange={list.setPage}
+        />
+        <Button variant="outline" asChild className="w-full">
+          <Link href="/records">독서 기록 전체 보기</Link>
+        </Button>
+      </section>
     </div>
   );
 }

@@ -2,15 +2,16 @@ import {
   BOOK_SUMMARY_KEY,
   MY_USERS_QUERY_KEY,
   USERS_QUERY_KEY,
-} from '@/constants/query-key.constants';
-import { queryClient } from '@/lib/react-query';
+} from "@/constants/query-key.constants";
+import { queryClient } from "@/lib/react-query";
 import {
   editUserNickname,
   editUserProfileImage,
   getUserInfoData,
   getUserMyInfoData,
-} from '@/repository/user.repository';
-import { useMutation, useQuery } from '@tanstack/react-query';
+} from "@/repository/user.repository";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import Cookies from "js-cookie";
 
 export const useGetUserInfoQuery = (id: string) => {
   return useQuery({
@@ -24,7 +25,9 @@ export const useGetUserInfoQuery = (id: string) => {
 export const useGetUserMyInfoQuery = () => {
   return useQuery({
     queryKey: [MY_USERS_QUERY_KEY],
-    queryFn: getUserMyInfoData,
+    queryFn: () => (Cookies.get("access_token") ? getUserMyInfoData() : null),
+    enabled: !!Cookies.get("access_token"),
+    retry: false,
     staleTime: Infinity,
     gcTime: Infinity,
   });

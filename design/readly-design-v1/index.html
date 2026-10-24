@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Readly · 데스크톱·모바일 디자인</title>
+  <style>
+    @font-face{font-family:Pretendard;src:url('./fonts/Pretendard-Regular.otf');font-weight:400;font-display:swap}@font-face{font-family:Pretendard;src:url('./fonts/Pretendard-SemiBold.otf');font-weight:500 600;font-display:swap}@font-face{font-family:Pretendard;src:url('./fonts/Pretendard-Bold.otf');font-weight:700;font-display:swap}@font-face{font-family:'Gowun Batang';src:url('./fonts/GowunBatang-Bold.ttf');font-weight:700;font-display:swap}
+    *{box-sizing:border-box}body{margin:0;background:#EBECEE;color:#141414;font:14px/1.6 Pretendard,sans-serif}button,select,input{font:inherit}button,select{cursor:pointer}button:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid #1670B5;outline-offset:3px}
+    .review{position:sticky;top:0;z-index:2;background:#242424;color:white;padding:14px 28px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}.review strong{font-size:16px}.review-brand{display:flex;align-items:center;gap:12px}.review-brand img{display:block}.review small{color:#d3d3d3}.review select,.review button{border:1px solid #777;border-radius:4px;padding:7px 12px;background:#fff;color:#242424}.review a{color:white;text-decoration:none;border-bottom:1px solid #ffffff70}.review a:first-of-type{margin-left:auto}.legend{padding:12px 28px;background:#fff;border-bottom:1px solid #ddd;display:flex;gap:24px;flex-wrap:wrap}.legend span{color:#666}.canvas{max-width:1488px;margin:24px auto;padding:0 24px}.canvas>svg{width:100%;height:auto;display:block;box-shadow:0 2px 8px #0000000c}.canvas a{cursor:pointer}.canvas a:hover>g>rect{stroke:#1670B5}.canvas a:focus{outline:none}.canvas a:focus-visible{outline:2px solid #1670B5;outline-offset:3px}
+    .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#242424;color:white;padding:14px 24px;border-radius:6px;z-index:5;max-width:90vw}.toast:empty{display:none}dialog{border:1px solid #ddd;border-radius:8px;padding:28px;width:440px;max-width:90vw}dialog::backdrop{background:#0005}dialog h2{margin-top:0}dialog input{width:100%;padding:12px;border:1px solid #aaa;margin:12px 0 20px}dialog button{padding:8px 16px;border:1px solid #aaa;background:#fff;border-radius:4px;margin-right:8px}
+    @media print{.review,.legend,.toast{display:none}.canvas{padding:0;margin:0;max-width:none}.canvas>svg{box-shadow:none}body{background:#fff}}
+    @media(max-width:767px){.review{padding:12px;gap:12px}.review strong{width:100%}.review a:first-of-type{margin-left:0}.legend{padding:12px;gap:8px}.canvas{padding:0 12px;margin:16px auto}.review small{width:100%}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <div class="review" aria-label="디자인 검토 도구">
+    <strong class="review-brand"><img src="./assets/readly-logo-white.svg" width="108" height="36" alt="Readly"/><span>DESIGN v1</span></strong>
+    <label>페이지 <select id="page-picker" aria-label="검토할 페이지"></select></label>
+    <label>기기 <select id="device-picker" aria-label="기기 크기"><option value="desktop">데스크톱 1440px</option><option value="mobile">모바일 390px</option></select></label>
+    <button id="state-button" type="button">뷰 전환</button>
+    <small id="preview-size">데스크톱 1440px · 디자인 시안 · 예시 데이터</small>
+    <a href="../readly-wireframes-v1/index.html">와이어프레임 보기</a><a href="../readly-design-figma-import.zip" download>전체 SVG ZIP</a><a id="svg-download" download>SVG 저장</a>
+  </div>
+  <div class="legend"><b id="current-title"></b><span id="current-note"></span><span>메뉴·기록·도서·뷰 전환을 눌러 이동할 수 있습니다.</span></div>
+  <main class="canvas" id="canvas"></main>
+  <div class="toast" role="status" aria-live="polite" id="toast"></div>
+  <dialog id="search-dialog"><form method="dialog" id="search-form"><h2>독서 기록 검색</h2><label for="query">검색어</label><input id="query" placeholder="책 제목, 기록 내용, 작성자"/><button value="search">검색</button><button value="cancel">취소</button></form></dialog>
+  <script src="design.js"></script>
+  <script>
+    const api=ReadlyDesign,picker=document.querySelector('#page-picker'),canvas=document.querySelector('#canvas');
+    const stateByPage={};let current='home',timer,url;let device=new URLSearchParams(location.search).get('device')||(window.innerWidth<768?'mobile':'desktop');if(!['mobile','desktop'].includes(device))device='desktop';const devicePicker=document.querySelector('#device-picker');devicePicker.value=device;
+    const note={home:'서비스 안내 → 낮은 작성 배너 → 기록 목록',records:'검색 → 이달의 추천 → 전체 기록', 'record-detail':'본문 + 도서 정보 → 댓글·대댓글',books:'검색 → 기록 유무 필터 → 도서 목록','book-detail':'도서 정보 → 연결된 독서 기록',login:'일반 로그인 + Google 로그인',signup:'아이디 확인 → 비밀번호 → 닉네임 → 필수 동의',write:'도서 선택 → 카테고리 → 본문 → 선택 쪽수 → 등록'};
+    for(const [key,label]of api.pages){const o=document.createElement('option');o.value=key;o.textContent=label;picker.append(o)}
+    function state(){return stateByPage[current]||(stateByPage[current]={view:current==='home'?'grid':'list',sort:'latest',category:0,onlyRecorded:false,reply:false,error:false,agreed:false,bookSelected:true,bookSearch:false,selectedBook:0,wholeBook:false})}
+    function notify(message){clearTimeout(timer);document.querySelector('#toast').textContent=message;timer=setTimeout(()=>document.querySelector('#toast').textContent='',4200)}
+    function render(){const scene=api.build(current,{...state(),device});const markup=api.svg(scene);canvas.innerHTML=markup;canvas.style.maxWidth=device==='mobile'?'438px':'1488px';document.querySelector('#preview-size').textContent=(device==='mobile'?'모바일 390px':'데스크톱 1440px')+' · 디자인 시안 · 예시 데이터';picker.value=current;document.querySelector('#current-title').textContent=scene.name;document.querySelector('#current-note').textContent=note[current];const b=document.querySelector('#state-button');b.hidden=!['home','records','book-detail','books','login','signup','record-detail','write'].includes(current);b.textContent=['home','records','book-detail'].includes(current)?'리스트 / 그리드 전환':current==='books'?'기록 있는 도서만 보기':current==='record-detail'?'답글 입력 상태 보기':current==='write'?'입력 오류 상태 보기':'오류 상태 보기';if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(new Blob([markup],{type:'image/svg+xml'}));document.querySelector('#svg-download').href=url;document.querySelector('#svg-download').download=current+'-'+device+'-'+state().view+'.svg'}
+    function navigate(key){if(!api.pages.some(([k])=>k===key))return;current=key;render();window.scrollTo({top:0,behavior:'instant'});history.replaceState(null,'','?device='+device+'#'+key)}
+    picker.addEventListener('change',()=>navigate(picker.value));
+    devicePicker.addEventListener('change',()=>{device=devicePicker.value;navigate(current)});
+    document.querySelector('#state-button').addEventListener('click',()=>{const s=state();if(['home','records','book-detail'].includes(current))s.view=s.view==='grid'?'list':'grid';else if(current==='books')s.onlyRecorded=!s.onlyRecorded;else if(current==='record-detail')s.reply=!s.reply;else s.error=!s.error;render()});
+    canvas.addEventListener('click',e=>{const node=e.target.closest('[data-action]');if(!node)return;e.preventDefault();const action=node.dataset.action,[type,value]=action.split(':');const s=state();if(type==='page')navigate(value);else if(type==='view'){s.view=value;render()}else if(type==='sort'){s.sort={latest:'popular',popular:'comments',comments:'latest'}[s.sort];render();notify({latest:'최신순',popular:'인기순 · 좋아요 많은순',comments:'댓글 많은순'}[s.sort])}else if(type==='category'){s.category=Number(value);render()}else if(type==='recommendation'){s.recommendation=Number(value);render()}else if(type==='filter'){s.onlyRecorded=!s.onlyRecorded;render()}else if(type==='reply'){s.reply=true;render();notify('답글 입력 상태가 표시되었습니다.')}else if(type==='write'){stateByPage.write={bookSelected:['book-detail','record-detail'].includes(current),selectedBook:0,wholeBook:false};navigate('write');}else if(type==='book-search'){s.bookSelected=false;s.bookSearch=true;s.error=false;render()}else if(type==='select-book'){s.selectedBook=Number(value);s.bookSelected=true;s.bookSearch=false;s.error=false;render()}else if(type==='write-whole-book'){s.wholeBook=!s.wholeBook;render()}else if(type==='write-publish'){s.error=true;render();notify('필수 입력 오류의 표시 예시입니다. 실제 기록을 등록하지 않습니다.');}else if(type==='search'){document.querySelector('#search-dialog').showModal();document.querySelector('#query').focus()}else if(type==='login'){s.error=true;render();notify('오류 메시지 표시 예시입니다. 실제 로그인 요청은 전송하지 않습니다.')}else if(type==='signup'){s.error=true;render();notify(s.agreed?'아이디·비밀번호 검증 오류 예시입니다.':'필수 이용약관 동의를 확인해 주세요.')}else if(type==='agree'){s.agreed=!s.agreed;render()}else if(type==='like')notify('좋아요 선택 상태가 적용되는 자리입니다.');else if(type==='notice')notify(action.slice(7))});
+    document.querySelector('#search-dialog').addEventListener('close',e=>{if(e.target.returnValue==='search'){const value=document.querySelector('#query').value.trim();notify(value?'검색어 “'+value+'”의 결과가 표시되는 흐름입니다.':'검색어를 입력해 주세요.')}});
+    canvas.addEventListener('keydown',e=>{if(e.key!==' ')return;const target=e.target.closest('[role="switch"]');if(target){e.preventDefault();target.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}))}});
+    const hash=location.hash.slice(1);if(api.pages.some(([k])=>k===hash))current=hash;render();
+  </script>
+</body>
+</html>

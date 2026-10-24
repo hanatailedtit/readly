@@ -1,35 +1,15 @@
-'use client';
-
-import BookSummaryCreateSection from '@/components/book/BookSummaryCreateSection/BookSummaryCreateSection';
-import { useGetDetailBookSummaryQuery } from '@/service/book.service';
-import { useParams } from 'next/navigation';
-
-export default function SummaryEditPage() {
-  const { id } = useParams();
-
-  const { data } = useGetDetailBookSummaryQuery(Number(id));
-  return (
-    <>
-      {data && (
-        <BookSummaryCreateSection
-          defaultBook={{
-            author: data.bookAuthor,
-            image: data.bookImage,
-            pubdate: data.bookPubdate,
-            title: data.bookTitle,
-            publisher: data.bookPublisher,
-            link: data.bookLink,
-            isbn: data.isbn,
-          }}
-          defaultContent={data.content}
-          defaultEndPage={data.endPage}
-          defaultStartPage={data.startPage}
-          defaultCategoryId={data.categoryId}
-          defaultCategoryName={data.category}
-          isEdit
-          summaryId={String(id)}
-        />
-      )}
-    </>
+"use client";
+import { useParams } from "next/navigation";
+import { useGetDetailBookSummaryQuery } from "@/service/book.service";
+import { RecordEditor } from "@/components/records/record-editor";
+import { LoadError } from "@/components/records/record-list";
+export default function EditPage() {
+  const { id } = useParams<{ id: string }>(),
+    query = useGetDetailBookSummaryQuery(Number(id));
+  if (query.isError) return <LoadError retry={query.refetch} />;
+  return query.data ? (
+    <RecordEditor key={id} record={query.data} />
+  ) : (
+    <p className="py-16 text-muted-foreground">기록을 불러오고 있어요.</p>
   );
 }

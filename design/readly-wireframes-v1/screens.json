@@ -1,0 +1,348 @@
+[
+  {
+    "file": "01-home-grid",
+    "key": "home",
+    "state": {
+      "view": "grid"
+    },
+    "name": "01 · 메인 / 그리드",
+    "width": 1440,
+    "height": 1485
+  },
+  {
+    "file": "01b-home-list",
+    "key": "home",
+    "state": {
+      "view": "list"
+    },
+    "name": "01 · 메인 / 리스트",
+    "width": 1440,
+    "height": 1773
+  },
+  {
+    "file": "02-reading-records",
+    "key": "records",
+    "state": {},
+    "name": "02 · 독서 기록",
+    "width": 1440,
+    "height": 2133
+  },
+  {
+    "file": "03-record-detail",
+    "key": "record-detail",
+    "state": {},
+    "name": "03 · 독서 기록 상세",
+    "width": 1440,
+    "height": 1846
+  },
+  {
+    "file": "04-books",
+    "key": "books",
+    "state": {},
+    "name": "04 · 도서 목록",
+    "width": 1440,
+    "height": 1397
+  },
+  {
+    "file": "05-book-detail",
+    "key": "book-detail",
+    "state": {},
+    "name": "05 · 도서 상세",
+    "width": 1440,
+    "height": 1414
+  },
+  {
+    "file": "06-login",
+    "key": "login",
+    "state": {},
+    "name": "06 · 로그인",
+    "width": 1440,
+    "height": 989
+  },
+  {
+    "file": "07-signup",
+    "key": "signup",
+    "state": {},
+    "name": "07 · 회원가입",
+    "width": 1440,
+    "height": 1002
+  },
+  {
+    "file": "04b-books-with-records",
+    "key": "books",
+    "state": {
+      "onlyRecorded": true
+    },
+    "name": "04 · 도서 목록 / 기록 있는 도서",
+    "width": 1440,
+    "height": 1390
+  },
+  {
+    "file": "03b-record-detail-reply",
+    "key": "record-detail",
+    "state": {
+      "reply": true
+    },
+    "name": "03 · 독서 기록 상세",
+    "width": 1440,
+    "height": 2003
+  },
+  {
+    "file": "06b-login-error",
+    "key": "login",
+    "state": {
+      "error": true
+    },
+    "name": "06 · 로그인",
+    "width": 1440,
+    "height": 1017
+  },
+  {
+    "file": "07b-signup-error",
+    "key": "signup",
+    "state": {
+      "error": true
+    },
+    "name": "07 · 회원가입",
+    "width": 1440,
+    "height": 1058
+  },
+  {
+    "file": "08-record-create",
+    "key": "write",
+    "state": {},
+    "name": "08 · 기록 남기기",
+    "width": 1440,
+    "height": 1566
+  },
+  {
+    "file": "08b-record-create-search",
+    "key": "write",
+    "state": {
+      "bookSelected": false,
+      "bookSearch": true,
+      "wholeBook": true
+    },
+    "name": "08 · 기록 남기기",
+    "width": 1440,
+    "height": 1894
+  },
+  {
+    "file": "08c-record-create-empty",
+    "key": "write",
+    "state": {
+      "bookSelected": false,
+      "wholeBook": true
+    },
+    "name": "08 · 기록 남기기",
+    "width": 1440,
+    "height": 1501
+  },
+  {
+    "file": "08d-record-create-error",
+    "key": "write",
+    "state": {
+      "bookSelected": false,
+      "error": true,
+      "wholeBook": false
+    },
+    "name": "08 · 기록 남기기",
+    "width": 1440,
+    "height": 1603
+  },
+  {
+    "file": "08e-record-create-whole-book",
+    "key": "write",
+    "state": {
+      "wholeBook": true
+    },
+    "name": "08 · 기록 남기기",
+    "width": 1440,
+    "height": 1566
+  },
+  {
+    "file": "mobile-01-home-grid",
+    "key": "home",
+    "state": {
+      "view": "grid",
+      "device": "mobile"
+    },
+    "name": "01 · 메인 / 그리드 / 모바일",
+    "width": 390,
+    "height": 2831
+  },
+  {
+    "file": "mobile-01b-home-list",
+    "key": "home",
+    "state": {
+      "view": "list",
+      "device": "mobile"
+    },
+    "name": "01 · 메인 / 리스트 / 모바일",
+    "width": 390,
+    "height": 2543
+  },
+  {
+    "file": "mobile-02-reading-records",
+    "key": "records",
+    "state": {
+      "device": "mobile"
+    },
+    "name": "02 · 독서 기록 / 모바일",
+    "width": 390,
+    "height": 3150
+  },
+  {
+    "file": "mobile-03-record-detail",
+    "key": "record-detail",
+    "state": {
+      "device": "mobile"
+    },
+    "name": "03 · 독서 기록 상세 / 모바일",
+    "width": 390,
+    "height": 2468
+  },
+  {
+    "file": "mobile-04-books",
+    "key": "books",
+    "state": {
+      "device": "mobile"
+    },
+    "name": "04 · 도서 목록 / 모바일",
+    "width": 390,
+    "height": 2192
+  },
+  {
+    "file": "mobile-05-book-detail",
+    "key": "book-detail",
+    "state": {
+      "device": "mobile"
+    },
+    "name": "05 · 도서 상세 / 모바일",
+    "width": 390,
+    "height": 1898
+  },
+  {
+    "file": "mobile-06-login",
+    "key": "login",
+    "state": {
+      "device": "mobile"
+    },
+    "name": "06 · 로그인 / 모바일",
+    "width": 390,
+    "height": 879
+  },
+  {
+    "file": "mobile-07-signup",
+    "key": "signup",
+    "state": {
+      "device": "mobile"
+    },
+    "name": "07 · 회원가입 / 모바일",
+    "width": 390,
+    "height": 1076
+  },
+  {
+    "file": "mobile-04b-books-with-records",
+    "key": "books",
+    "state": {
+      "onlyRecorded": true,
+      "device": "mobile"
+    },
+    "name": "04 · 도서 목록 / 모바일",
+    "width": 390,
+    "height": 1832
+  },
+  {
+    "file": "mobile-03b-record-detail-reply",
+    "key": "record-detail",
+    "state": {
+      "reply": true,
+      "device": "mobile"
+    },
+    "name": "03 · 독서 기록 상세 / 모바일",
+    "width": 390,
+    "height": 2625
+  },
+  {
+    "file": "mobile-06b-login-error",
+    "key": "login",
+    "state": {
+      "error": true,
+      "device": "mobile"
+    },
+    "name": "06 · 로그인 / 모바일",
+    "width": 390,
+    "height": 907
+  },
+  {
+    "file": "mobile-07b-signup-error",
+    "key": "signup",
+    "state": {
+      "error": true,
+      "device": "mobile"
+    },
+    "name": "07 · 회원가입 / 모바일",
+    "width": 390,
+    "height": 1132
+  },
+  {
+    "file": "mobile-08-record-create",
+    "key": "write",
+    "state": {
+      "device": "mobile"
+    },
+    "name": "08 · 기록 남기기 / 모바일",
+    "width": 390,
+    "height": 1763
+  },
+  {
+    "file": "mobile-08b-record-create-search",
+    "key": "write",
+    "state": {
+      "bookSelected": false,
+      "bookSearch": true,
+      "wholeBook": true,
+      "device": "mobile"
+    },
+    "name": "08 · 기록 남기기 / 모바일",
+    "width": 390,
+    "height": 2297
+  },
+  {
+    "file": "mobile-08c-record-create-empty",
+    "key": "write",
+    "state": {
+      "bookSelected": false,
+      "wholeBook": true,
+      "device": "mobile"
+    },
+    "name": "08 · 기록 남기기 / 모바일",
+    "width": 390,
+    "height": 1688
+  },
+  {
+    "file": "mobile-08d-record-create-error",
+    "key": "write",
+    "state": {
+      "bookSelected": false,
+      "error": true,
+      "wholeBook": false,
+      "device": "mobile"
+    },
+    "name": "08 · 기록 남기기 / 모바일",
+    "width": 390,
+    "height": 1790
+  },
+  {
+    "file": "mobile-08e-record-create-whole-book",
+    "key": "write",
+    "state": {
+      "wholeBook": true,
+      "device": "mobile"
+    },
+    "name": "08 · 기록 남기기 / 모바일",
+    "width": 390,
+    "height": 1763
+  }
+]

@@ -1,0 +1,32 @@
+{
+  "fileKey": "2oOCrkc9mpVE7aQcoOUhlM",
+  "url": "https://www.figma.com/design/2oOCrkc9mpVE7aQcoOUhlM",
+  "status": "partial_due_to_starter_mcp_call_limit",
+  "completed": [
+    "main grid screen"
+  ],
+  "frames": {
+    "home": "3:2",
+    "records": "3:3",
+    "recordDetail": "3:4",
+    "books": "3:5",
+    "bookDetail": "3:6",
+    "login": "3:7",
+    "signup": "3:8"
+  },
+  "bodyFrames": {
+    "home": "4:1087",
+    "records": "4:1088",
+    "recordDetail": "4:1089",
+    "books": "4:1090",
+    "bookDetail": "4:1091",
+    "login": "4:1092",
+    "signup": "4:1093"
+  },
+  "localCompletePages": 8,
+  "localExportedStates": 34,
+  "localViewports": {
+    "desktop": 1440,
+    "mobile": 390
+  }
+}

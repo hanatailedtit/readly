@@ -1,168 +1,153 @@
-'use client';
-
-import BookSummaryList from '@/components/book/BookSummaryList/BookSummaryList';
-import MyPageProfileSkeleton from '@/components/skeleton/my-page/MyPageProfileSkeleton';
-import { COLORS } from '@/constants/color.constants';
-import { useGetBookSummaryListQuery } from '@/service/book.service';
+"use client";
+import { useParams } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 import {
+  useGetUserInfoQuery,
+  useGetUserMyInfoQuery,
   useEditUserNicknameMutation,
   useEditUserProfileImageMutation,
-  useGetUserInfoQuery,
-} from '@/service/user.service';
-import { Icon } from '@iconify/react/dist/iconify.js';
-import CommonButton from '@/components/ui/button/CommonButton/CommonButton';
-import CommonFileInput from '@/components/ui/input/CommonFileInput/CommonFileInput';
-import CommonInput from '@/components/ui/input/CommonInput/CommonInput';
-import ProfileImage from '@/components/ui/image/ProfileImage/ProfileImage';
-import { useParams } from 'next/navigation';
-import { useState } from 'react';
-
-export default function MyPage() {
-  const { id } = useParams();
-  const [nickname, setNickname] = useState('');
-  const [files, setFiles] = useState<FileList | null>(null);
-  const [isOpenNicknameInput, setIsOpenNicknameInput] = useState(false);
-  const [isOpenFileInput, setIsOpenFileInput] = useState(false);
-  const [nicknameAlertMessage, setNicknameAlertMessage] = useState('');
-
-  const { data: infoData, isFetching: infoFetching } = useGetUserInfoQuery(
-    String(id),
-  );
-  const {
-    data: myListData,
-    isFetching: listFetching,
-    fetchNextPage,
-  } = useGetBookSummaryListQuery({
-    user_id: String(id),
-  });
-  const { mutateAsync: nicknameMutate, isPending: nicknamePending } =
-    useEditUserNicknameMutation();
-  const { mutateAsync: imageMutate, isPending: imagePending } =
-    useEditUserProfileImageMutation();
-
-  const clickEditNicknameButton = () => {
-    setIsOpenNicknameInput(!isOpenNicknameInput);
-  };
-
-  const clickEditFileButton = () => {
-    setIsOpenFileInput(!isOpenFileInput);
-  };
-
-  const clickEnterEditNickname = async () => {
-    setNicknameAlertMessage('');
-
-    if (nickname.length <= 1) {
-      setNicknameAlertMessage('닉네임을 2자 이상 입력해주세요.');
-      return;
-    }
-
-    if (nickname.length > 8) {
-      setNicknameAlertMessage('닉네임을 8자 이하로 입력해주세요.');
-      return;
-    }
-
-    await nicknameMutate({ nickname });
-    setIsOpenNicknameInput(false);
-  };
-
-  const clickEnterEditProfile = async () => {
-    if (!files) return;
-
-    const image = files[0];
-
-    if (!image) return;
-
-    const formData = new FormData();
-    formData.append('image', image);
-
-    await imageMutate(formData);
-    setIsOpenFileInput(false);
-  };
-
+} from "@/service/user.service";
+import { useRecordFeed } from "@/service/library.service";
+import {
+  RecordGrid,
+  ListControls,
+  LoadError,
+  PageNumbers,
+  useListState,
+} from "@/components/records/record-list";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+export default function ProfilePage() {
+  const { id } = useParams<{ id: string }>(),
+    info = useGetUserInfoQuery(id),
+    { data: me } = useGetUserMyInfoQuery(),
+    list = useListState(),
+    feed = useRecordFeed({ page: list.page, order: list.order, userId: id }),
+    nickname = useEditUserNicknameMutation(),
+    image = useEditUserProfileImageMutation(),
+    [editing, setEditing] = useState(false),
+    [name, setName] = useState("");
+  if (info.isError) return <LoadError retry={info.refetch} />;
   return (
-    <div className="flex flex-col items-center gap-y-[16px]">
-      {infoFetching && <MyPageProfileSkeleton />}
-      {!infoFetching && infoData && (
-        <div className="w-full flex flex-col items-center">
-          <div className="flex flex-row items-end relative mb-[16px]">
-            <ProfileImage imageSrc={infoData?.profile_image} size="xLarge" />
-            {infoData?.is_my && (
-              <CommonButton
-                className={[
-                  'rounded-full w-[24px] h-[24px] p-0 absolute right-[-16px]',
-                  isOpenFileInput && 'bg-main',
-                  isOpenFileInput && 'border-transparent',
-                ]}
-                onClick={clickEditFileButton}
-                variant="outline"
-              >
-                <Icon
-                  icon="mingcute:pencil-fill"
-                  color={isOpenFileInput ? COLORS.white : COLORS.black}
-                />
-              </CommonButton>
-            )}
+    <div className="space-y-10">
+      <section className="space-y-5 rounded-sm bg-muted p-6">
+        <div className="flex items-center gap-5">
+          <Avatar className="h-20 w-20">
+            <AvatarImage src={info.data?.profile_image} alt="프로필" />
+            <AvatarFallback>{info.data?.nickname.slice(0, 1)}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="page-title">
+              {info.data?.nickname || "독자 프로필"}
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              책을 읽고 남긴 마음들
+            </p>
           </div>
-          {isOpenFileInput && (
-            <div className="flex flex-row gap-x-[16px]">
-              <CommonFileInput value={files} onChangeValue={setFiles} />
-              <CommonButton
-                onClick={clickEnterEditProfile}
-                isLoading={imagePending}
-              >
-                수정
-              </CommonButton>
-            </div>
-          )}
-
-          <div className="flex flex-col items-center gap-y-[16px] relative">
-            <div className="flex flex-row gap-x-[8px] items-center">
-              <p className="text-lg">{infoData?.nickname}</p>
-              {infoData?.is_my && (
-                <CommonButton
-                  className={[
-                    'rounded-full w-[24px] h-[24px] p-0 absolute right-[-32px] bottom-0',
-                    isOpenNicknameInput && 'bg-main',
-                    isOpenNicknameInput && 'border-transparent',
-                  ]}
-                  variant="outline"
-                  onClick={clickEditNicknameButton}
-                >
-                  <Icon
-                    icon="mingcute:pencil-fill"
-                    color={isOpenNicknameInput ? COLORS.white : COLORS.black}
-                  />
-                </CommonButton>
-              )}
-            </div>
-          </div>
-          {isOpenNicknameInput && (
-            <div className="flex flex-row gap-x-[16px] mt-[16px]">
-              <CommonInput
-                className="flex-1"
-                placeholder="수정할 닉네임"
-                onChangeValue={setNickname}
-                alertText={nicknameAlertMessage}
-              />
-              <CommonButton
-                onClick={clickEnterEditNickname}
-                isLoading={nicknamePending}
-              >
-                수정
-              </CommonButton>
-            </div>
-          )}
         </div>
-      )}
-
-      <div className="w-full">
-        <h1 className="text-lg mb-[16px]">작성글</h1>
-        <BookSummaryList
-          data={myListData?.pages.flatMap((item) => item.data) || null}
-          isFetching={listFetching}
-          fetchNextPage={fetchNextPage}
+        {info.data?.is_my && me?.id === info.data.id && (
+          <>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditing(!editing);
+                  setName(info.data.nickname);
+                }}
+              >
+                닉네임 수정
+              </Button>
+              <div>
+                <Label
+                  htmlFor="profile-image"
+                  className="flex h-[46px] cursor-pointer items-center rounded-md border bg-white px-4"
+                >
+                  {image.isPending ? "업로드 중…" : "프로필 사진 변경"}
+                </Label>
+                <Input
+                  id="profile-image"
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  disabled={image.isPending}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (
+                      !file.type.startsWith("image/") ||
+                      file.size > 5 * 1024 * 1024
+                    ) {
+                      toast.error("5MB 이하의 이미지를 선택해 주세요.");
+                      return;
+                    }
+                    const form = new FormData();
+                    form.append("image", file);
+                    try {
+                      await image.mutateAsync(form);
+                      toast.success("프로필 사진을 변경했어요.");
+                    } catch {
+                      toast.error("사진을 변경하지 못했어요.");
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            {editing && (
+              <form
+                className="flex max-w-md gap-3"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (name.trim().length < 2 || name.trim().length > 8) {
+                    toast.error("닉네임은 2–8자로 입력해 주세요.");
+                    return;
+                  }
+                  try {
+                    await nickname.mutateAsync({ nickname: name.trim() });
+                    setEditing(false);
+                  } catch {
+                    toast.error("닉네임을 변경하지 못했어요.");
+                  }
+                }}
+              >
+                <Label className="sr-only" htmlFor="profile-name">
+                  닉네임
+                </Label>
+                <Input
+                  id="profile-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <Button type="submit" disabled={nickname.isPending}>
+                  저장
+                </Button>
+              </form>
+            )}
+          </>
+        )}
+      </section>
+      <section className="space-y-6">
+        <ListControls
+          title={`작성한 독서 기록 ${feed.data?.total || 0}건`}
+          {...list}
         />
-      </div>
+        {feed.isError ? (
+          <LoadError retry={feed.refetch} />
+        ) : (
+          <RecordGrid
+            records={feed.data?.records || []}
+            loading={feed.isLoading}
+            view={list.view}
+          />
+        )}
+        <PageNumbers
+          page={list.page}
+          total={feed.data?.total || 0}
+          onChange={list.setPage}
+        />
+      </section>
     </div>
   );
 }

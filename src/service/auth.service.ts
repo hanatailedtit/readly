@@ -1,29 +1,26 @@
-import {
-  BOOK_SUMMARY_KEY,
-  MY_USERS_QUERY_KEY,
-} from '@/constants/query-key.constants';
-import { queryClient } from '@/lib/react-query';
+import { MY_USERS_QUERY_KEY } from "@/constants/query-key.constants";
+import { queryClient } from "@/lib/react-query";
 import {
   checkSignUpId,
   checkSignUpNickname,
   loginByDefault,
   loginByGoogle,
   signUpByDefault,
-} from '@/repository/auth.repository';
-import { useMutation } from '@tanstack/react-query';
-import Cookies from 'js-cookie';
+} from "@/repository/auth.repository";
+import { useMutation } from "@tanstack/react-query";
+import Cookies from "js-cookie";
 
 export const useLoginByGoogleMutation = () => {
   return useMutation({
     mutationFn: loginByGoogle,
     onSuccess: (res) => {
-      Cookies.set('access_token', String(res.accessToken), {
-        sameSite: 'Strict',
+      Cookies.set("access_token", String(res.accessToken), {
+        sameSite: "Strict",
         expires: 1,
         secure: true,
       });
-      queryClient.invalidateQueries({ queryKey: [MY_USERS_QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [BOOK_SUMMARY_KEY] });
+      queryClient.setQueryData([MY_USERS_QUERY_KEY], null);
+      queryClient.invalidateQueries();
     },
   });
 };
@@ -51,13 +48,13 @@ export const useLoginByDefaultMutation = () => {
     mutationFn: loginByDefault,
     onSuccess: (res) => {
       if (!res.isSuccess) return;
-      Cookies.set('access_token', String(res.accessToken), {
-        sameSite: 'Strict',
+      Cookies.set("access_token", String(res.accessToken), {
+        sameSite: "Strict",
         expires: 1,
         secure: true,
       });
-      queryClient.invalidateQueries({ queryKey: [MY_USERS_QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [BOOK_SUMMARY_KEY] });
+      queryClient.setQueryData([MY_USERS_QUERY_KEY], null);
+      queryClient.invalidateQueries();
     },
   });
 };

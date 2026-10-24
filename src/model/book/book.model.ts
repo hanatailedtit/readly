@@ -1,16 +1,26 @@
-import { BookSummaryItemProps } from '@/components/book/BookSummaryItem/BookSummaryItem';
-
-export type BookSummaryItemModel = BookSummaryItemProps;
-
-export type BookDetailSummaryModel = BookSummaryItemProps & {
+export type BookSummaryItemModel = {
+  id: number;
+  content: string;
+  bookTitle: string;
+  bookAuthor: string;
+  userId: string;
+  userImage: string;
+  userName: string;
+  startPage: number;
+  endPage: number;
+  createAt: string;
+  category?: string;
+  categoryId?: number;
+  likeCount?: number;
+  viewCount?: number;
+  commentCount?: number;
   bookImage: string;
-  bookPubdate: string;
   bookPublisher: string;
+  bookPubdate: string;
   bookLink: string;
-  isMy: boolean;
   isbn: string;
 };
-
+export type BookDetailSummaryModel = BookSummaryItemModel & { isMy: boolean };
 export type SearchBookItemModel = {
   title: string;
   author: string;
@@ -19,7 +29,6 @@ export type SearchBookItemModel = {
   image: string;
   isbn?: string;
 };
-
 export type BookCreatedRankModel = {
   image: string;
   title: string;

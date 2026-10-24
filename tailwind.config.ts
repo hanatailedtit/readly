@@ -1,53 +1,54 @@
 import type { Config } from "tailwindcss";
-
-const config: Config = {
-  content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
+import animate from "tailwindcss-animate";
+export default {
+  content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        main: '#5ae9e4',
-        'dark-main': '#47b6b2',
-        black: '#111111',
-        gray: '#d3d3d3',
-        'light-gray': '#efefef',
-        'dark-gray': '#898989',
-        blue: '#5676d3',
-        'light-blue': '#eff3ff',
-        red: '#ff0000',
-        'light-red': '#fbc9c9',
-        'dark-red': '#be0000',
-        green: '#00ff32',
-        'light-green': '#aeffbe',
-        yellow: '#FFFF00',
-        'light-yellow': '#ffffc9',
-        brown: '#964B00',
-        'light-brown': '#edd6bf',
-        highlight: '#fdf5e1',
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
       },
-      fontSize: {
-        sm: '12px',
-        md: '14px',
-        base: '16px',
-        lg: '22px',
-        xl: '32px',
+      fontFamily: {
+        sans: ["var(--font-pretendard)", "sans-serif"],
+        display: ["var(--font-gowun)", "serif"],
       },
-      animation: {
-        'show-toast': 'show-toast 0.3s',
-      },
-      screens: {
-        sm: '0',
-        md: '640px',
-        lg: '748px',
-        xl: '1080px',
-        '2xl': '1280px',
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "4px",
       },
     },
   },
-  plugins: [],
-};
-
-export default config;
+  plugins: [animate],
+} satisfies Config;

@@ -1,96 +1,137 @@
-'use client';
-
-import { COLORS } from '@/constants/color.constants';
+"use client";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { useGoogleLogin } from "@react-oauth/google";
+import { toast } from "sonner";
+import { AuthLayout } from "@/components/auth/auth-layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   useLoginByDefaultMutation,
   useLoginByGoogleMutation,
-} from '@/service/auth.service';
-import { getRootPage } from '@/utils/route.utils';
-import { Icon } from '@iconify/react/dist/iconify.js';
-import { useGoogleLogin } from '@react-oauth/google';
-import CommonButton from '@/components/ui/button/CommonButton/CommonButton';
-import CommonInput from '@/components/ui/input/CommonInput/CommonInput';
-import { useRouter } from 'next/navigation';
-import { useMemo } from 'react';
-import { SubmitHandler, useForm } from 'react-hook-form';
-
-type Inputs = {
-  id: string;
-  password: string;
-};
-
+} from "@/service/auth.service";
+import { safeReturnPath } from "@/lib/records";
+type Values = { id: string; password: string };
 export default function LoginPage() {
-  const router = useRouter();
+  const router = useRouter(),
+    params = useSearchParams(),
+    login = useLoginByDefaultMutation(),
+    google = useLoginByGoogleMutation(),
+    [message, setMessage] = useState("");
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Inputs>();
-
-  const {
-    mutateAsync: defaultMutate,
-    data: loginData,
-    isPending: isDefaultPending,
-  } = useLoginByDefaultMutation();
-  const { mutateAsync: googleMutate } = useLoginByGoogleMutation();
-  const message = useMemo(() => loginData?.message, [loginData?.message]);
-
-  const submitLoginData: SubmitHandler<Inputs> = async (data) => {
-    const mutate = await defaultMutate({
-      password: data.password,
-      user_id: data.id,
-    });
-
-    if (mutate.isSuccess) {
-      router.push(getRootPage());
-    }
-  };
-
-  const clickGoogleLoginButton = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      await googleMutate(tokenResponse.code);
-      router.push(getRootPage());
+  } = useForm<Values>();
+  const destination = safeReturnPath(params.get("next"));
+  const googleLogin = useGoogleLogin({
+    flow: "auth-code",
+    onSuccess: async (response) => {
+      try {
+        await google.mutateAsync(response.code);
+        router.replace(destination);
+      } catch {
+        setMessage("Google 로그인에 실패했어요. 다시 시도해 주세요.");
+      }
     },
-    flow: 'auth-code',
+    onError: () =>
+      setMessage("Google 로그인에 실패했어요. 다시 시도해 주세요."),
   });
-
   return (
-    <div className="w-full flex flex-col items-center">
+    <AuthLayout>
       <form
-        className="w-full sm:w-[400px] flex flex-col gap-y-[26px]"
-        onSubmit={handleSubmit(submitLoginData)}
+        className="space-y-6"
+        onSubmit={handleSubmit(async (values) => {
+          setMessage("");
+          try {
+            const result = await login.mutateAsync({
+              user_id: values.id,
+              password: values.password,
+            });
+            if (result.isSuccess) router.replace(destination);
+            else
+              setMessage(
+                result.message || "아이디와 비밀번호를 확인해 주세요.",
+              );
+          } catch {
+            setMessage("로그인하지 못했어요. 잠시 후 다시 시도해 주세요.");
+          }
+        })}
       >
-        <h1 className="text-lg font-bold">로그인</h1>
-        <CommonInput
-          placeholder="아이디"
-          {...register('id', { required: '아이디를 입력해주세요.' })}
-          alertText={errors.id?.message}
-        />
-        <CommonInput
-          placeholder="비밀번호"
-          {...register('password', { required: '비밀번호를 입력해주세요.' })}
-          alertText={errors.password?.message}
-          type="password"
-        />
-        {message && <p className="text-red">{message}</p>}
-        <div className="flex flex-col gap-y-[16px]">
-          <CommonButton
-            type="submit"
-            className="bg-main border-transparent text-[18px] text-white font-bold"
-            isLoading={isDefaultPending}
-            loadingColor={COLORS.white}
-          >
-            로그인
-          </CommonButton>
-          <CommonButton
-            className="text-[18px] font-bold"
-            onClick={clickGoogleLoginButton}
-          >
-            <Icon icon="devicon:google" />
-            구글 로그인
-          </CommonButton>
+        <div className="space-y-4 pb-2">
+          <h1 className="page-title">다시 만나 반가워요</h1>
+          <p className="text-muted-foreground">
+            독서 기록을 이어가려면 로그인해 주세요.
+          </p>
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="login-id">아이디</Label>
+          <Input
+            id="login-id"
+            autoComplete="username"
+            placeholder="아이디를 입력하세요."
+            aria-invalid={!!errors.id}
+            aria-describedby={errors.id ? "login-id-error" : undefined}
+            {...register("id", { required: "아이디를 입력해 주세요." })}
+          />
+          {errors.id && (
+            <p id="login-id-error" className="field-error" role="alert">
+              {errors.id.message}
+            </p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="login-password">비밀번호</Label>
+          <Input
+            id="login-password"
+            autoComplete="current-password"
+            type="password"
+            placeholder="비밀번호를 입력하세요."
+            aria-invalid={!!errors.password}
+            {...register("password", { required: "비밀번호를 입력해 주세요." })}
+          />
+          {errors.password && (
+            <p className="field-error" role="alert">
+              {errors.password.message}
+            </p>
+          )}
+        </div>
+        {message && (
+          <p className="field-error" role="alert">
+            {message}
+          </p>
+        )}
+        <Button className="w-full" type="submit" disabled={login.isPending}>
+          {login.isPending ? "로그인 중…" : "로그인"}
+        </Button>
+        <p className="text-center text-sm text-muted-foreground">또는</p>
+        <Button
+          className="w-full"
+          type="button"
+          variant="outline"
+          disabled={google.isPending}
+          onClick={() => {
+            if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+              toast.error(
+                "Google 로그인을 현재 사용할 수 없어요. 아이디로 로그인해 주세요.",
+              );
+              return;
+            }
+            googleLogin();
+          }}
+        >
+          Google로 계속하기
+        </Button>
+        <p className="text-center text-sm text-muted-foreground">
+          아직 계정이 없으신가요?
+        </p>
+        <Button className="w-full" asChild variant="ghost">
+          <Link href="/sign-up">회원가입</Link>
+        </Button>
       </form>
-    </div>
+    </AuthLayout>
   );
 }
