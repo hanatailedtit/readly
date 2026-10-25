@@ -20,7 +20,7 @@ export function Comments({ id }: { id: number }) {
   const query = useGetSummaryCommentListQuery(id),
     { data: user } = useGetUserMyInfoQuery(),
     create = useCreateSummaryCommentMutation(),
-    remove = useDeleteSummaryCommentMutation();
+    remove = useDeleteSummaryCommentMutation(id);
   const [text, setText] = useState(""),
     [replyId, setReplyId] = useState<number | null>(null),
     [replies, setReplies] = useState<Record<number, string>>({}),

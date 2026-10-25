@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useState, memo } from "react";
+import { useEditor, useEditorState, EditorContent } from "@tiptap/react";
 import ImageExtension from "@tiptap/extension-image";
 import { TableKit } from "@tiptap/extension-table";
 import { TextStyleKit } from "@tiptap/extension-text-style";
@@ -26,7 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { safeExternalUrl } from "@/lib/records";
-export function RichEditor({
+export const RichEditor = memo(function RichEditor({
   value,
   onChange,
   invalid = false,
@@ -52,6 +52,7 @@ export function RichEditor({
     ],
     content: value,
     immediatelyRender: false,
+    shouldRerenderOnTransaction: false,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
     editorProps: {
       attributes: {
@@ -62,6 +63,17 @@ export function RichEditor({
       },
     },
   });
+  const state = useEditorState({
+    editor,
+    selector: ({ editor }) => ({
+      characters: editor?.getText().length || 0,
+      bold: editor?.isActive("bold") || false,
+      italic: editor?.isActive("italic") || false,
+      blockquote: editor?.isActive("blockquote") || false,
+      bulletList: editor?.isActive("bulletList") || false,
+      heading: editor?.isActive("heading") || false,
+    }),
+  });
   return (
     <div
       className="overflow-hidden rounded-sm border"
@@ -69,7 +81,7 @@ export function RichEditor({
     >
       <div className="flex flex-wrap items-center gap-1 bg-muted p-3">
         <Select
-          defaultValue="body"
+          value={state?.heading ? "heading" : "body"}
           onValueChange={(v) => {
             if (v === "body") editor?.chain().focus().setParagraph().run();
             else editor?.chain().focus().toggleHeading({ level: 2 }).run();
@@ -86,22 +98,22 @@ export function RichEditor({
         {[
           [
             "굵게",
-            editor?.isActive("bold"),
+            state?.bold,
             () => editor?.chain().focus().toggleBold().run(),
           ],
           [
             "기울임",
-            editor?.isActive("italic"),
+            state?.italic,
             () => editor?.chain().focus().toggleItalic().run(),
           ],
           [
             "인용",
-            editor?.isActive("blockquote"),
+            state?.blockquote,
             () => editor?.chain().focus().toggleBlockquote().run(),
           ],
           [
             "목록",
-            editor?.isActive("bulletList"),
+            state?.bulletList,
             () => editor?.chain().focus().toggleBulletList().run(),
           ],
         ].map(([label, active, action]) => (
@@ -133,7 +145,7 @@ export function RichEditor({
       </div>
       <EditorContent editor={editor} />
       <div className="flex justify-between bg-muted p-3 text-xs text-muted-foreground">
-        <span>{editor?.getText().length || 0}자</span>
+        <span>{state?.characters || 0}자</span>
         <span>서식 있는 본문 작성</span>
       </div>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -186,4 +198,4 @@ export function RichEditor({
       </Dialog>
     </div>
   );
-}
+});

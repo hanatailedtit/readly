@@ -1,10 +1,11 @@
+import { memo } from "react";
 import Link from "next/link";
 import { Heart, MessageSquare } from "lucide-react";
 import type { BookSummaryItemModel } from "@/model/book/book.model";
 import { plainText, recordTitle, formatDate } from "@/lib/records";
 import { cn } from "@/lib/utils";
 import { BookCover } from "@/components/books/book-cover";
-export function RecordCard({
+export const RecordCard = memo(function RecordCard({
   record,
   view = "grid",
   recommended = false,
@@ -109,4 +110,4 @@ export function RecordCard({
       </div>
     </Link>
   );
-}
+});

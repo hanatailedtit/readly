@@ -3,14 +3,13 @@ import {
   MY_USERS_QUERY_KEY,
   USERS_QUERY_KEY,
 } from "@/constants/query-key.constants";
-import { queryClient } from "@/lib/react-query";
 import {
   editUserNickname,
   editUserProfileImage,
   getUserInfoData,
   getUserMyInfoData,
 } from "@/repository/user.repository";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Cookies from "js-cookie";
 
 export const useGetUserInfoQuery = (id: string) => {
@@ -18,7 +17,6 @@ export const useGetUserInfoQuery = (id: string) => {
     queryKey: [USERS_QUERY_KEY, id],
     queryFn: () => getUserInfoData(id),
     staleTime: Infinity,
-    gcTime: Infinity,
   });
 };
 
@@ -29,11 +27,11 @@ export const useGetUserMyInfoQuery = () => {
     enabled: !!Cookies.get("access_token"),
     retry: false,
     staleTime: Infinity,
-    gcTime: Infinity,
   });
 };
 
 export const useEditUserNicknameMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: editUserNickname,
     onSuccess: () => {
@@ -45,6 +43,7 @@ export const useEditUserNicknameMutation = () => {
 };
 
 export const useEditUserProfileImageMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: editUserProfileImage,
     onSuccess: () => {

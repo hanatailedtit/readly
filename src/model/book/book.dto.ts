@@ -111,7 +111,7 @@ export type BookSummaryListRequest = {
 export type BookSummaryListResponse = {
   total: number;
   list: BookSummaryItemDto[];
-  nextOffset: number;
+  nextOffset: number | null;
 };
 
 export type BookSummaryItemDto = {

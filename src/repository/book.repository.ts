@@ -1,4 +1,4 @@
-import { readlyApiAxiosInstance } from '@/api/readly-api';
+import { readlyApiAxiosInstance } from "@/api/readly-api";
 import {
   BookCategoryDto,
   BookCreatedRankDto,
@@ -12,102 +12,155 @@ import {
   SearchBookRequest,
   SearchBookResponse,
   SearchBookSummaryListRequest,
-} from '@/model/book/book.dto';
+} from "@/model/book/book.dto";
+import type { SearchBookItem } from "@/model/book/book.dto";
+import { recordBookKey } from "@/lib/records";
 
-export const searchBookList = async (params: SearchBookRequest) => {
+export const searchBookList = async (
+  params: SearchBookRequest,
+  signal?: AbortSignal,
+) => {
   const { data } = await readlyApiAxiosInstance().post<SearchBookResponse>(
-    '/book/search',
+    "/book/search",
     params,
+    { signal },
   );
   return data;
 };
 
-export const getRecentBookList = async () => {
-  const { data } =
-    await readlyApiAxiosInstance().get<RecentBookDto[]>('/book/recent');
+export const getRecentBookList = async (signal?: AbortSignal) => {
+  const { data } = await readlyApiAxiosInstance().get<RecentBookDto[]>(
+    "/book/recent",
+    { signal },
+  );
   return data;
 };
 
 export const getBookCreatedRank = async () => {
   const { data } =
     await readlyApiAxiosInstance().get<BookCreatedRankDto[]>(
-      '/book/created-rank',
+      "/book/created-rank",
     );
   return data;
 };
 
 export const createBookSummary = async (params: CreateBookSummaryRequest) => {
-  await readlyApiAxiosInstance().post('/book/summary/create', params);
+  await readlyApiAxiosInstance().post("/book/summary/create", params);
 };
 
-export const getDetailBookSummary = async (id: BookSummaryItemDto['id']) => {
+export const getDetailBookSummary = async (
+  id: BookSummaryItemDto["id"],
+  signal?: AbortSignal,
+) => {
   const { data } = await readlyApiAxiosInstance().get<BookSummaryItemDto>(
-    '/book/summary',
+    "/book/summary",
     {
       params: {
         id,
       },
+      signal,
     },
   );
   return data;
 };
 
 export const editBookSummary = async (
-  params: EditBookSummaryRequest & { id: BookSummaryItemDto['id'] },
+  params: EditBookSummaryRequest & { id: BookSummaryItemDto["id"] },
 ) => {
-  await readlyApiAxiosInstance().put('/book/summary/edit', params);
+  await readlyApiAxiosInstance().put("/book/summary/edit", params);
 };
 
-export const deleteDetailBookSummary = async (id: BookSummaryItemDto['id']) => {
-  await readlyApiAxiosInstance().delete('/book/summary/delete', {
+export const deleteDetailBookSummary = async (id: BookSummaryItemDto["id"]) => {
+  await readlyApiAxiosInstance().delete("/book/summary/delete", {
     params: {
       id,
     },
   });
 };
 
-export const getBookSummaryList = async (params: BookSummaryListRequest) => {
-  const { data } = await readlyApiAxiosInstance().get<BookSummaryListResponse>(
-    '/book/summary/list',
-    {
-      params,
-    },
-  );
-  return data;
+export const getBookSummaryList = async (
+  params: BookSummaryListRequest,
+  signal?: AbortSignal,
+) => {
+  const { data } = await readlyApiAxiosInstance().get<
+    BookSummaryListResponse | []
+  >("/book/summary/list", {
+    params,
+    signal,
+  });
+  return Array.isArray(data) ? { total: 0, list: [], nextOffset: null } : data;
 };
 
-export const getBookSummaryLikeCount = async (id: BookSummaryItemDto['id']) => {
+export const getBookSummaryLikeCount = async (
+  id: BookSummaryItemDto["id"],
+  signal?: AbortSignal,
+) => {
   const { data } =
     await readlyApiAxiosInstance().get<BookSummaryLikeCountResponse>(
-      '/book/summary/like-count',
+      "/book/summary/like-count",
       {
         params: {
           id,
         },
+        signal,
       },
     );
   return data;
 };
 
 export const addBookSummaryLikeCount = async (
-  params: Pick<BookSummaryItemDto, 'id'>,
+  params: Pick<BookSummaryItemDto, "id">,
 ) => {
-  await readlyApiAxiosInstance().post('/book/summary/click-like', params);
+  await readlyApiAxiosInstance().post("/book/summary/click-like", params);
 };
 
-export const getBookCategoryList = async () => {
+export const getBookCategoryList = async (signal?: AbortSignal) => {
   const { data } = await readlyApiAxiosInstance().get<BookCategoryDto[]>(
-    '/book/category-list',
+    "/book/category-list",
+    { signal },
   );
   return data;
 };
 
 export const getSearchBookSummaryList = async (
   params: SearchBookSummaryListRequest,
+  signal?: AbortSignal,
 ) => {
-  const { data } = await readlyApiAxiosInstance().get<BookSummaryListResponse>(
-    '/book/summary/search',
-    { params },
-  );
-  return data;
+  const { data } = await readlyApiAxiosInstance().get<
+    BookSummaryListResponse | []
+  >("/book/summary/search", { params, signal });
+  return Array.isArray(data) ? { total: 0, list: [], nextOffset: null } : data;
+};
+
+export const getRecordsForBook = async (
+  book: SearchBookItem,
+  signal?: AbortSignal,
+) => {
+  const records: BookSummaryItemDto[] = [];
+  const seen = new Set<number>();
+  const key = recordBookKey(book);
+  let offset = 0;
+  while (true) {
+    const page = await getSearchBookSummaryList(
+      { type: "title", keyword: book.title, limit: 100, offset },
+      signal,
+    );
+    let added = 0;
+    for (const record of page.list) {
+      if (seen.has(record.id)) continue;
+      seen.add(record.id);
+      added++;
+      if (
+        recordBookKey({
+          isbn: record.isbn,
+          title: record.book_title,
+          author: record.book_author.replaceAll("^", ", "),
+        }) === key
+      )
+        records.push(record);
+    }
+    // 검색 API의 total은 카테고리별 집계라 실제 페이지 길이로 종료한다.
+    if (page.list.length < 100 || !added) return records;
+    offset += page.list.length;
+  }
 };

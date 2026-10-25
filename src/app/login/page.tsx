@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useGoogleLogin } from "@react-oauth/google";
+import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 import { toast } from "sonner";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,15 @@ import {
 import { safeReturnPath } from "@/lib/records";
 type Values = { id: string; password: string };
 export default function LoginPage() {
+  return (
+    <GoogleOAuthProvider
+      clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}
+    >
+      <LoginForm />
+    </GoogleOAuthProvider>
+  );
+}
+function LoginForm() {
   const router = useRouter(),
     params = useSearchParams(),
     login = useLoginByDefaultMutation(),

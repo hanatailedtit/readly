@@ -108,3 +108,18 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* 원격 모바일 브라우저가 터치를 키보드 포커스로 처리하는 경우도 구분한다. */
+html[data-input-modality="pointer"]
+  :is(a, button, [role="combobox"], [role="switch"], [role="checkbox"]):focus {
+  outline: none;
+  --tw-ring-color: transparent;
+  --tw-ring-offset-color: transparent;
+}
+a,
+button,
+[role="combobox"],
+[role="switch"],
+[role="checkbox"] {
+  -webkit-tap-highlight-color: transparent;
+}

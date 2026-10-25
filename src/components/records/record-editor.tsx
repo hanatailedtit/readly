@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
@@ -43,7 +43,7 @@ export function RecordEditor({
     [category, setCategory] = useState(
       record?.categoryId ? String(record.categoryId) : "",
     ),
-    [content, setContent] = useState(record?.content || ""),
+    content = useRef(record?.content || ""),
     [wholeBook, setWholeBook] = useState(
       record ? !record.startPage && !record.endPage : false,
     ),
@@ -52,6 +52,9 @@ export function RecordEditor({
     ),
     [end, setEnd] = useState(record?.endPage ? String(record.endPage) : ""),
     [errors, setErrors] = useState<Record<string, string>>({});
+  const setContent = useCallback((value: string) => {
+    content.current = value;
+  }, []);
   const search = useSearchBookMutation(),
     categories = useGetBookCategoryListQuery(),
     recent = useGetRecentBookListQuery(),
@@ -95,7 +98,7 @@ export function RecordEditor({
             const issues: Record<string, string> = {};
             if (!book) issues.book = "기록할 책을 선택해 주세요.";
             if (!category) issues.category = "카테고리를 선택해 주세요.";
-            if (!plainText(content))
+            if (!plainText(content.current))
               issues.content = "독서 기록 내용을 입력해 주세요.";
             const range = pageRangeError(start, end, wholeBook);
             if (range) issues.range = range;
@@ -103,7 +106,7 @@ export function RecordEditor({
             if (Object.keys(issues).length || !book) return;
             const payload = {
               bookInfo: book,
-              content,
+              content: content.current,
               category_id: Number(category),
               startPage: wholeBook || !start ? undefined : Number(start),
               endPage: wholeBook || !end ? undefined : Number(end),
@@ -293,7 +296,7 @@ export function RecordEditor({
           <section className="space-y-4">
             <h2 className="section-title">독서 기록 *</h2>
             <RichEditor
-              value={content}
+              value={record?.content || ""}
               onChange={setContent}
               invalid={!!errors.content}
             />

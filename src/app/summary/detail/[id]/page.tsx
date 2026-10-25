@@ -11,8 +11,8 @@ import {
   useGetDetailBookSummaryQuery,
 } from "@/service/book.service";
 import { useGetUserMyInfoQuery } from "@/service/user.service";
-import { useBookCatalog } from "@/service/library.service";
-import { recordTitle, formatDate } from "@/lib/records";
+import { useBookRecords } from "@/service/library.service";
+import { recordTitle, formatDate, bookFromRecord } from "@/lib/records";
 import { ShareMenu } from "@/components/records/share-menu";
 import { BookCover } from "@/components/books/book-cover";
 import { SafeContent } from "@/components/records/safe-content";
@@ -34,9 +34,9 @@ export default function RecordDetailPage() {
     like = useAddBookSummaryLikeCountMutation(),
     remove = useDeleteDetailBookSummaryMutation(),
     { data: user } = useGetUserMyInfoQuery(),
-    catalog = useBookCatalog(),
     [confirm, setConfirm] = useState(false);
   const record = query.data;
+  const related = useBookRecords(record ? bookFromRecord(record) : undefined);
   if (query.isError) return <LoadError retry={query.refetch} />;
   if (!record)
     return (
@@ -45,7 +45,7 @@ export default function RecordDetailPage() {
       </p>
     );
   const bookLink = `/books/${encodeURIComponent(record.isbn || record.bookTitle)}`,
-    count = catalog.data?.find((b) => b.isbn === record.isbn)?.count;
+    count = related.data?.length;
 
   return (
     <div className="space-y-8">

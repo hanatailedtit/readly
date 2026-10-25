@@ -13,7 +13,10 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { MY_USERS_QUERY_KEY } from "@/constants/query-key.constants";
+import {
+  MY_USERS_QUERY_KEY,
+  isSessionQuery,
+} from "@/constants/query-key.constants";
 export function BrandLogo() {
   return (
     <Image
@@ -85,12 +88,14 @@ export function SiteHeader() {
                   onSelect={async () => {
                     Cookies.remove("access_token");
                     await client.cancelQueries({
-                      queryKey: [MY_USERS_QUERY_KEY],
+                      predicate: isSessionQuery,
                     });
                     client.setQueryData([MY_USERS_QUERY_KEY], null);
                     void client.invalidateQueries({
                       predicate: (query) =>
-                        query.queryKey[0] !== MY_USERS_QUERY_KEY,
+                        query.queryKey[0] !== MY_USERS_QUERY_KEY &&
+                        query.queryKey[1] !== "recent" &&
+                        isSessionQuery(query),
                     });
                   }}
                 >

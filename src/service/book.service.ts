@@ -1,10 +1,13 @@
 import {
   BOOK_CATEGORY_KEY,
+  BOOK_INFO_KEY,
+  BOOK_SEARCH_KEY,
   BOOK_RANK_KEY,
   BOOK_SUMMARY_KEY,
   BOOK_SUMMARY_LIKE_KEY,
-} from '@/constants/query-key.constants';
-import { queryClient } from '@/lib/react-query';
+} from "@/constants/query-key.constants";
+import { useGetUserMyInfoQuery } from "./user.service";
+import { bookFromRecord } from "@/lib/records";
 import {
   BookSummaryItemDto,
   BookSummaryListRequest,
@@ -16,7 +19,7 @@ import {
   toDetailBookSummaryModel,
   toRecentBookItemModel,
   toSearchBookItemModel,
-} from '@/model/book/book.dto';
+} from "@/model/book/book.dto";
 import {
   addBookSummaryLikeCount,
   createBookSummary,
@@ -28,31 +31,53 @@ import {
   getRecentBookList,
   getSearchBookSummaryList,
   searchBookList,
-} from '@/repository/book.repository';
-import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
+} from "@/repository/book.repository";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   getBookCategoryList,
   getBookSummaryList,
-} from './../repository/book.repository';
+} from "./../repository/book.repository";
 
 export const useSearchBookMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation<SearchBookResponse, Error, SearchBookRequest>({
-    mutationFn: async (params) => {
-      const data = await searchBookList(params);
-      return toSearchBookItemModel(data);
+    mutationFn: (params) => {
+      const request = {
+        ...params,
+        query: params.query.trim(),
+        display: params.display || "10",
+        start: params.start || "1",
+        sort: params.sort || "sim",
+      };
+      return queryClient.fetchQuery({
+        queryKey: [BOOK_SEARCH_KEY, request],
+        staleTime: 5 * 60_000,
+        queryFn: async ({ signal }) =>
+          toSearchBookItemModel(await searchBookList(request, signal)),
+      });
+    },
+    onSuccess: (result) => {
+      for (const book of result.items)
+        queryClient.setQueryData([BOOK_INFO_KEY, book.isbn], book);
     },
   });
 };
 
 export const useGetRecentBookListQuery = () => {
+  const { data: user } = useGetUserMyInfoQuery();
   return useQuery({
-    queryKey: [BOOK_SUMMARY_KEY],
-    queryFn: async () => {
-      const data = await getRecentBookList();
+    queryKey: [BOOK_SUMMARY_KEY, "recent", user?.id],
+    enabled: !!user,
+    queryFn: async ({ signal }) => {
+      const data = await getRecentBookList(signal);
       return data.map((item) => toRecentBookItemModel(item));
     },
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: 60_000,
   });
 };
 
@@ -63,12 +88,12 @@ export const useGetBookCreatedRankQuery = () => {
       const data = await getBookCreatedRank();
       return data.map((item, index) => toBookCreatedRankModel(item, index));
     },
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: 60_000,
   });
 };
 
 export const useCreateBookSummaryMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createBookSummary,
     onSuccess: () => {
@@ -77,19 +102,27 @@ export const useCreateBookSummaryMutation = () => {
   });
 };
 
-export const useGetDetailBookSummaryQuery = (id: BookSummaryItemDto['id']) => {
+export const useGetDetailBookSummaryQuery = (id: BookSummaryItemDto["id"]) => {
+  const queryClient = useQueryClient();
   return useQuery({
     queryKey: [BOOK_SUMMARY_KEY, id],
-    queryFn: async () => {
-      const data = await getDetailBookSummary(id);
-      return toDetailBookSummaryModel(data);
+    enabled: Number.isInteger(id) && id > 0,
+    refetchOnWindowFocus: false,
+    queryFn: async ({ signal }) => {
+      const data = await getDetailBookSummary(id, signal);
+      const record = toDetailBookSummaryModel(data);
+      queryClient.setQueryData(
+        [BOOK_INFO_KEY, record.isbn || record.bookTitle],
+        bookFromRecord(record),
+      );
+      return record;
     },
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: 60_000,
   });
 };
 
 export const useEditBookSummaryMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: editBookSummary,
     onSuccess: () => {
@@ -99,6 +132,7 @@ export const useEditBookSummaryMutation = () => {
 };
 
 export const useDeleteDetailBookSummaryMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: deleteDetailBookSummary,
     onSuccess: () => {
@@ -114,12 +148,16 @@ export const useGetBookSummaryListQuery = (params: BookSummaryListRequest) => {
       params.user_id,
       params.category_id,
       params.order,
+      params.limit,
     ],
-    queryFn: async ({ pageParam = 0 }) => {
-      const { total, list, nextOffset } = await getBookSummaryList({
-        ...params,
-        offset: pageParam * Number(params.limit || 16),
-      });
+    queryFn: async ({ pageParam = 0, signal }) => {
+      const { total, list, nextOffset } = await getBookSummaryList(
+        {
+          ...params,
+          offset: pageParam * Number(params.limit || 16),
+        },
+        signal,
+      );
 
       return {
         total,
@@ -129,23 +167,38 @@ export const useGetBookSummaryListQuery = (params: BookSummaryListRequest) => {
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: 60_000,
   });
 };
 
-export const useGetBookSummaryLikeCountQuery = (id: BookSummaryItemDto['id']) => {
+export const useGetBookSummaryLikeCountQuery = (
+  id: BookSummaryItemDto["id"],
+) => {
   return useQuery({
     queryKey: [BOOK_SUMMARY_LIKE_KEY, id],
-    queryFn: async () => await getBookSummaryLikeCount(id),
+    enabled: Number.isInteger(id) && id > 0,
+    queryFn: ({ signal }) => getBookSummaryLikeCount(id, signal),
   });
 };
 
 export const useAddBookSummaryLikeCountMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: addBookSummaryLikeCount,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [BOOK_SUMMARY_LIKE_KEY] });
+    onSuccess: async (_, { id }) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [BOOK_SUMMARY_LIKE_KEY, id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [BOOK_SUMMARY_KEY],
+          refetchType: "none",
+          predicate: (query) =>
+            ["feed", "monthly", "book-records"].includes(
+              String(query.queryKey[1]),
+            ),
+        }),
+      ]);
     },
   });
 };
@@ -153,7 +206,8 @@ export const useAddBookSummaryLikeCountMutation = () => {
 export const useGetBookCategoryListQuery = () => {
   return useQuery({
     queryKey: [BOOK_CATEGORY_KEY],
-    queryFn: getBookCategoryList,
+    staleTime: 10 * 60_000,
+    queryFn: ({ signal }) => getBookCategoryList(signal),
   });
 };
 
@@ -161,12 +215,21 @@ export const useGetSearchBookSummaryListQuery = (
   params: SearchBookSummaryListRequest,
 ) => {
   return useInfiniteQuery({
-    queryKey: [BOOK_SUMMARY_KEY, params.type, params.keyword],
-    queryFn: async ({ pageParam = 0 }) => {
-      const { total, list, nextOffset } = await getSearchBookSummaryList({
-        ...params,
-        offset: pageParam * Number(params.limit || 16),
-      });
+    queryKey: [
+      BOOK_SUMMARY_KEY,
+      "search-infinite",
+      params.type,
+      params.keyword,
+      params.limit,
+    ],
+    queryFn: async ({ pageParam = 0, signal }) => {
+      const { total, list, nextOffset } = await getSearchBookSummaryList(
+        {
+          ...params,
+          offset: pageParam * Number(params.limit || 16),
+        },
+        signal,
+      );
 
       return {
         total,
@@ -176,7 +239,6 @@ export const useGetSearchBookSummaryListQuery = (
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: 60_000,
   });
 };

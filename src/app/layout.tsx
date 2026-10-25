@@ -9,17 +9,18 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { Toaster } from "@/components/ui/sonner";
 const pretendard = localFont({
   src: [
-    { path: "../../public/fonts/Pretendard-Regular.otf", weight: "400" },
-    { path: "../../public/fonts/Pretendard-SemiBold.otf", weight: "500 600" },
-    { path: "../../public/fonts/Pretendard-Bold.otf", weight: "700" },
+    { path: "../../public/fonts/Pretendard-Regular.woff2", weight: "400" },
+    { path: "../../public/fonts/Pretendard-SemiBold.woff2", weight: "500 600" },
+    { path: "../../public/fonts/Pretendard-Bold.woff2", weight: "700" },
   ],
   variable: "--font-pretendard",
   display: "swap",
 });
 const gowun = localFont({
-  src: "../../public/fonts/GowunBatang-Bold.ttf",
+  src: "../../public/fonts/GowunBatang-Bold.woff2",
   weight: "700",
   variable: "--font-gowun",
+  preload: false,
   display: "swap",
 });
 export const metadata: Metadata = {

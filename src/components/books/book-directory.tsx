@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useBookCatalog } from "@/service/library.service";
 import {
   useSearchBookMutation,
@@ -29,35 +29,45 @@ export function BookDirectory() {
     [onlyRecorded, setOnlyRecorded] = useState(false),
     [order, setOrder] = useState("count"),
     [page, setPage] = useState(1);
-  const available = new Map(
-    (catalog.data || []).map((book) => [recordBookKey(book), book]),
-  );
-  for (const book of recent.data || []) {
-    const key = recordBookKey(book);
-    if (!available.has(key))
-      available.set(key, { ...book, count: 0, records: [] });
-  }
-  const books: CatalogBook[] = searched
-    ? (search.data?.items || []).map((b) => {
-        const existing = catalog.data?.find((c) => c.isbn === b.isbn);
-        return {
-          ...b,
-          count: existing?.count || 0,
-          records: existing?.records || [],
-        };
-      })
-    : [...available.values()];
-  const filtered = books
-    .filter((b) => !onlyRecorded || b.count > 0)
-    .sort((a, b) =>
-      order === "title"
-        ? a.title.localeCompare(b.title, "ko")
-        : order === "recent"
-          ? (b.records[0]?.createAt || "").localeCompare(
-              a.records[0]?.createAt || "",
-            )
-          : b.count - a.count,
+  const available = useMemo(() => {
+    const books = new Map(
+      (catalog.data || []).map((book) => [recordBookKey(book), book]),
     );
+    for (const book of recent.data || []) {
+      const key = recordBookKey(book);
+      if (!books.has(key)) books.set(key, { ...book, count: 0, records: [] });
+    }
+    return books;
+  }, [catalog.data, recent.data]);
+  const books: CatalogBook[] = useMemo(
+    () =>
+      searched
+        ? (search.data?.items || []).map((book) => {
+            const existing = available.get(recordBookKey(book));
+            return {
+              ...book,
+              count: existing?.count || 0,
+              records: existing?.records || [],
+            };
+          })
+        : [...available.values()],
+    [searched, search.data, available],
+  );
+  const filtered = useMemo(
+    () =>
+      books
+        .filter((book) => !onlyRecorded || book.count > 0)
+        .sort((a, b) =>
+          order === "title"
+            ? a.title.localeCompare(b.title, "ko")
+            : order === "recent"
+              ? (b.records[0]?.createAt || "").localeCompare(
+                  a.records[0]?.createAt || "",
+                )
+              : b.count - a.count,
+        ),
+    [books, onlyRecorded, order],
+  );
   return (
     <div className="space-y-8">
       <div className="space-y-4">

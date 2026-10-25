@@ -1,9 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { useBookCatalog } from "@/service/library.service";
-import { searchBookList } from "@/repository/book.repository";
+import { useBookInfo, useBookRecords } from "@/service/library.service";
+import { useMemo } from "react";
 import { BookCover } from "@/components/books/book-cover";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,44 +14,29 @@ import {
 } from "@/components/records/record-list";
 import { safeExternalUrl, formatDate } from "@/lib/records";
 export default function BookDetailPage() {
-  const { isbn } = useParams<{ isbn: string }>(),
-    catalog = useBookCatalog(),
-    list = useListState();
-  const recorded = catalog.data?.find(
-      (b) => b.isbn === isbn || b.title === isbn,
-    ),
-    lookup = useQuery({
-      queryKey: ["book", isbn],
-      queryFn: () => searchBookList({ query: isbn }),
-      enabled: !catalog.isLoading && !recorded,
-    });
-  const book =
-    recorded ||
-    lookup.data?.items.find(
-      (b) => b.isbn === isbn || b.isbn.split(" ").includes(isbn),
-    );
-  const records = [...(recorded?.records || [])].sort((a, b) =>
-    list.order === "like"
-      ? (b.likeCount || 0) - (a.likeCount || 0)
-      : list.order === "view"
-        ? (b.viewCount || 0) - (a.viewCount || 0)
-        : list.order === "asc"
-          ? a.createAt.localeCompare(b.createAt)
-          : b.createAt.localeCompare(a.createAt),
+  const { isbn } = useParams<{ isbn: string }>();
+  const lookup = useBookInfo(isbn);
+  const book = lookup.data;
+  const query = useBookRecords(book ?? undefined);
+  const list = useListState();
+  const records = useMemo(
+    () =>
+      [...(query.data || [])].sort((a, b) =>
+        list.order === "like"
+          ? (b.likeCount || 0) - (a.likeCount || 0)
+          : list.order === "view"
+            ? (b.viewCount || 0) - (a.viewCount || 0)
+            : list.order === "asc"
+              ? a.createAt.localeCompare(b.createAt)
+              : b.createAt.localeCompare(a.createAt),
+      ),
+    [query.data, list.order],
   );
-  if (catalog.isError || lookup.isError)
-    return (
-      <LoadError
-        retry={() => {
-          void catalog.refetch();
-          void lookup.refetch();
-        }}
-      />
-    );
+  if (lookup.isError) return <LoadError retry={lookup.refetch} />;
   if (!book)
     return (
       <p className="py-16 text-center text-muted-foreground">
-        {catalog.isLoading || lookup.isFetching
+        {lookup.isLoading || lookup.isFetching
           ? "도서 정보를 불러오고 있어요."
           : "도서를 찾을 수 없어요."}
       </p>
@@ -109,10 +93,15 @@ export default function BookDetailPage() {
         <p className="text-sm text-muted-foreground">
           같은 책에서 발견한, 서로 다른 이야기
         </p>
-        <RecordGrid
-          records={records.slice((list.page - 1) * 12, list.page * 12)}
-          view={list.view}
-        />
+        {query.isError ? (
+          <LoadError retry={query.refetch} />
+        ) : (
+          <RecordGrid
+            loading={query.isLoading}
+            records={records.slice((list.page - 1) * 12, list.page * 12)}
+            view={list.view}
+          />
+        )}
         <PageNumbers
           page={list.page}
           total={records.length}
