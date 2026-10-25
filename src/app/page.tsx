@@ -40,8 +40,8 @@ export default function Home() {
         <Image
           src="/brand/reading-illustration.svg"
           alt="펼친 책에 담긴 독서 기록"
-          width={460}
-          height={300}
+          width={397}
+          height={236}
           priority
           className="mx-auto h-auto w-full max-w-[460px]"
         />

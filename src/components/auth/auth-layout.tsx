@@ -27,8 +27,9 @@ export function AuthLayout({
         </h2>
         <Image
           src="/brand/reading-illustration.svg"
-          width={480}
-          height={313}
+          width={397}
+          height={236}
+          className="h-auto w-full max-w-[480px]"
           alt="펼친 책 속에 남겨진 독서 기록"
         />
         <p className="text-muted-foreground">
