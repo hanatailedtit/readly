@@ -10,7 +10,19 @@ const nextConfig = {
         protocol: "https",
         hostname: "shopping-phinf.pstatic.net",
       },
+      {
+        protocol: "https",
+        hostname: "readlyapi.createdoodle.dev",
+      },
     ],
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/backend/:path*",
+        destination: "https://readlyapi.createdoodle.dev/:path*",
+      },
+    ];
   },
 };
 
