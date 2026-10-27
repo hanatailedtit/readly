@@ -34,16 +34,19 @@ export function RecordGrid({
   records,
   view = "grid",
   loading = false,
+  profile = false,
 }: {
   records: BookSummaryItemModel[];
   view?: "grid" | "list";
   loading?: boolean;
+  profile?: boolean;
 }) {
   return (
     <div
       className={cn(
         "grid gap-4 sm:gap-6",
-        view === "grid" && "md:grid-cols-2 lg:grid-cols-3",
+        view === "grid" &&
+          (profile ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-3"),
       )}
     >
       {loading
@@ -55,7 +58,9 @@ export function RecordGrid({
               }
             />
           ))
-        : records.map((r) => <RecordCard key={r.id} record={r} view={view} />)}
+        : records.map((r) => (
+            <RecordCard key={r.id} record={r} view={view} profile={profile} />
+          ))}
       {!loading && !records.length && (
         <div className="col-span-full rounded-sm bg-muted p-10 text-center">
           <p className="text-lg font-semibold">

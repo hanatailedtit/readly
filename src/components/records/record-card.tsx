@@ -9,10 +9,12 @@ export const RecordCard = memo(function RecordCard({
   record,
   view = "grid",
   recommended = false,
+  profile = false,
 }: {
   record: BookSummaryItemModel;
   view?: "grid" | "list";
   recommended?: boolean;
+  profile?: boolean;
 }) {
   return (
     <Link
@@ -22,6 +24,8 @@ export const RecordCard = memo(function RecordCard({
         view === "grid"
           ? "min-h-[296px]"
           : "p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-6",
+        profile && "p-5 sm:p-6",
+        profile && view === "list" && "sm:flex-col sm:items-stretch sm:gap-4",
       )}
     >
       {view === "grid" ? (
@@ -33,11 +37,11 @@ export const RecordCard = memo(function RecordCard({
         >
           <path d="M0 0h12v24l-6-4-6 4Z" />
         </svg>
-      ) : (
+      ) : !profile ? (
         <div className="hidden sm:block">
           <BookCover title={record.bookTitle} image={record.bookImage} />
         </div>
-      )}
+      ) : null}
       <div
         className={cn(
           "min-w-0 flex-1",
@@ -49,13 +53,18 @@ export const RecordCard = memo(function RecordCard({
             이달의 추천
           </p>
         )}
-        <div className={cn(view === "list" && "flex gap-3 sm:block")}>
+        <div
+          className={cn(
+            view === "list" && "flex gap-3 sm:block",
+            profile && view === "list" && "gap-4 sm:flex sm:gap-6",
+          )}
+        >
           {view === "list" && (
-            <div className="sm:hidden">
+            <div className={cn(!profile && "sm:hidden")}>
               <BookCover
                 title={record.bookTitle}
                 image={record.bookImage}
-                className="w-[72px]"
+                className={profile ? "w-16" : "w-[72px]"}
               />
             </div>
           )}
@@ -66,6 +75,7 @@ export const RecordCard = memo(function RecordCard({
                 view === "grid"
                   ? "mb-5 min-h-[60px] pr-2 sm:text-xl"
                   : "sm:text-[22px]",
+                profile && "text-[17px] sm:text-lg",
               )}
             >
               {recordTitle(record)}
@@ -90,10 +100,13 @@ export const RecordCard = memo(function RecordCard({
           view === "grid"
             ? "mt-auto items-center justify-between border-t pt-4"
             : "items-center justify-between sm:w-44 sm:flex-col sm:items-start",
+          profile &&
+            "mt-auto items-center justify-between sm:w-auto sm:flex-row sm:items-center",
         )}
       >
         <span>
-          {record.userName} · {formatDate(record.createAt)}
+          {!profile && `${record.userName} · `}
+          {formatDate(record.createAt)}
         </span>
         <div className="flex shrink-0 gap-5">
           <span className="flex items-center gap-1.5">

@@ -9,6 +9,7 @@ import {
   getSearchBookSummaryList,
   getRecordsForBook,
   searchBookList,
+  getUserRecords,
 } from "@/repository/book.repository";
 import {
   toBookSummaryItemModel,
@@ -21,6 +22,16 @@ import {
   bookFromRecord,
   type CatalogBook,
 } from "@/lib/records";
+
+export function useProfileRecords(userId: string) {
+  return useQuery({
+    queryKey: [BOOK_SUMMARY_KEY, "profile", userId],
+    enabled: !!userId,
+    staleTime: 60_000,
+    queryFn: async ({ signal }) =>
+      (await getUserRecords(userId, signal)).map(toBookSummaryItemModel),
+  });
+}
 
 export function useRecordFeed({
   page = 1,

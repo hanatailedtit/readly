@@ -7,12 +7,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useGetUserMyInfoQuery } from "@/service/user.service";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
   MY_USERS_QUERY_KEY,
@@ -34,6 +28,21 @@ export function SiteHeader() {
   const path = usePathname(),
     { data: user } = useGetUserMyInfoQuery(),
     client = useQueryClient();
+
+  const handleLogout = async () => {
+    Cookies.remove("access_token");
+    await client.cancelQueries({
+      predicate: isSessionQuery,
+    });
+    client.setQueryData([MY_USERS_QUERY_KEY], null);
+    void client.invalidateQueries({
+      predicate: (query) =>
+        query.queryKey[0] !== MY_USERS_QUERY_KEY &&
+        query.queryKey[1] !== "recent" &&
+        isSessionQuery(query),
+    });
+  };
+
   const nav = (
     <>
       {[
@@ -75,9 +84,13 @@ export function SiteHeader() {
         </nav>
         <div className="flex items-center gap-1 sm:gap-3">
           {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 px-2">
+            <>
+              <Button
+                asChild
+                variant="ghost"
+                className="flex items-center gap-1.5 px-1.5 sm:gap-2 sm:px-2"
+              >
+                <Link href={`/my-page/${user.id}`}>
                   <Avatar className="h-7 w-7">
                     <AvatarImage
                       src={user.profile_image}
@@ -88,37 +101,24 @@ export function SiteHeader() {
                       {user.nickname?.slice(0, 1)}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="max-w-24 truncate">{user.nickname}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href={`/my-page/${user.id}`}>내 독서 기록</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={async () => {
-                    Cookies.remove("access_token");
-                    await client.cancelQueries({
-                      predicate: isSessionQuery,
-                    });
-                    client.setQueryData([MY_USERS_QUERY_KEY], null);
-                    void client.invalidateQueries({
-                      predicate: (query) =>
-                        query.queryKey[0] !== MY_USERS_QUERY_KEY &&
-                        query.queryKey[1] !== "recent" &&
-                        isSessionQuery(query),
-                    });
-                  }}
-                >
-                  로그아웃
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <span className="max-w-16 truncate sm:max-w-24">
+                    {user.nickname}
+                  </span>
+                </Link>
+              </Button>
+              <Button
+                variant="ghost"
+                className="px-2 text-xs text-muted-foreground hover:text-foreground sm:px-3 sm:text-sm"
+                onClick={handleLogout}
+              >
+                로그아웃
+              </Button>
+            </>
           ) : (
             <Button
               asChild
               variant="ghost"
-              className="order-2 px-2 sm:order-none sm:px-4"
+              className="px-2 sm:px-4"
             >
               <Link href="/login">로그인</Link>
             </Button>

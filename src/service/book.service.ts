@@ -236,7 +236,7 @@ export const useAddBookSummaryLikeCountMutation = () => {
           queryKey: [BOOK_SUMMARY_KEY],
           refetchType: "none",
           predicate: (query) =>
-            ["feed", "monthly", "book-records"].includes(
+            ["feed", "monthly", "book-records", "profile"].includes(
               String(query.queryKey[1]),
             ),
         }),

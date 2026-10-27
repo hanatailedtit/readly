@@ -184,3 +184,27 @@ export const getRecordsForBook = async (
     offset += page.list.length;
   }
 };
+
+export const getUserRecords = async (userId: string, signal?: AbortSignal) => {
+  if (!userId) return [];
+  const records: BookSummaryItemDto[] = [];
+  const seen = new Set<number>();
+  let offset = 0;
+  // shortcut: 개인별 검색·도서 집계 API가 생기면 사용자 범위 일괄 조회를 대체한다.
+  while (true) {
+    const page = await getBookSummaryList(
+      { user_id: userId, order: "desc", limit: 100, offset },
+      signal,
+    );
+    let added = 0;
+    for (const record of page.list) {
+      if (seen.has(record.id)) continue;
+      seen.add(record.id);
+      added++;
+      if (record.user_id === userId) records.push(record);
+    }
+    if (page.list.length < 100 || seen.size >= page.total || !added)
+      return records;
+    offset += page.list.length;
+  }
+};
