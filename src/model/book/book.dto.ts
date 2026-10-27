@@ -18,6 +18,10 @@ export type SearchBookResponse = {
   start: number;
   display: number;
   items: SearchBookItem[];
+  meta?: {
+    pageable_count: number;
+    is_end: boolean;
+  };
 };
 
 export type BookItemDto = Pick<

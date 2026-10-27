@@ -37,6 +37,8 @@ import {
   searchBookList,
 } from "@/repository/book.repository";
 import {
+  keepPreviousData,
+  queryOptions,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -47,24 +49,34 @@ import {
   getBookSummaryList,
 } from "./../repository/book.repository";
 
+const bookSearchOptions = (params: SearchBookRequest) => {
+  const request = {
+    ...params,
+    query: params.query.trim(),
+    display: params.display || "10",
+    start: params.start || "1",
+    sort: params.sort || "sim",
+  };
+  return queryOptions({
+    queryKey: [BOOK_SEARCH_KEY, request],
+    staleTime: 5 * 60_000,
+    queryFn: async ({ signal }) =>
+      toSearchBookItemModel(await searchBookList(request, signal)),
+  });
+};
+
+export const useSearchBookQuery = (params: SearchBookRequest) => {
+  return useQuery({
+    ...bookSearchOptions(params),
+    enabled: !!params.query.trim(),
+    placeholderData: keepPreviousData,
+  });
+};
+
 export const useSearchBookMutation = () => {
   const queryClient = useQueryClient();
   return useMutation<SearchBookResponse, Error, SearchBookRequest>({
-    mutationFn: (params) => {
-      const request = {
-        ...params,
-        query: params.query.trim(),
-        display: params.display || "10",
-        start: params.start || "1",
-        sort: params.sort || "sim",
-      };
-      return queryClient.fetchQuery({
-        queryKey: [BOOK_SEARCH_KEY, request],
-        staleTime: 5 * 60_000,
-        queryFn: async ({ signal }) =>
-          toSearchBookItemModel(await searchBookList(request, signal)),
-      });
-    },
+    mutationFn: (params) => queryClient.fetchQuery(bookSearchOptions(params)),
     onSuccess: (result) => {
       for (const book of result.items)
         queryClient.setQueryData([BOOK_INFO_KEY, book.isbn], book);

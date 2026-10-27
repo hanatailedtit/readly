@@ -179,9 +179,9 @@ export function BookDirectory() {
         <>
           {!isLoading && (
             <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
-              {books.map((b) => (
+              {books.map((b, index) => (
                 <Link
-                  key={b.isbn || b.title}
+                  key={`${b.isbn || b.link || b.title}:${index}`}
                   href={`/books/${encodeURIComponent(b.isbn || b.title)}`}
                   className="flex gap-4 rounded-sm border p-4 transition-colors hover:border-primary sm:flex-col sm:p-5"
                 >

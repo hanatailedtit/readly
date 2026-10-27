@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { BookCover } from "@/components/books/book-cover";
 import { RichEditor } from "./rich-editor";
@@ -21,7 +22,7 @@ import {
   useCreateBookSummaryMutation,
   useEditBookSummaryMutation,
   useGetBookCategoryListQuery,
-  useSearchBookMutation,
+  useSearchBookQuery,
   useGetRecentBookListQuery,
 } from "@/service/book.service";
 import type { SearchBookItem } from "@/model/book/book.dto";
@@ -40,6 +41,9 @@ export function RecordEditor({
       record ? bookFromRecord(record) : defaultBook || null,
     ),
     [query, setQuery] = useState(""),
+    [searchQuery, setSearchQuery] = useState(""),
+    [searchPage, setSearchPage] = useState(1),
+    [searchPageSize, setSearchPageSize] = useState(8),
     [category, setCategory] = useState(
       record?.categoryId ? String(record.categoryId) : "",
     ),
@@ -55,12 +59,44 @@ export function RecordEditor({
   const setContent = useCallback((value: string) => {
     content.current = value;
   }, []);
-  const search = useSearchBookMutation(),
+  const search = useSearchBookQuery({
+      query: searchQuery,
+      display: String(searchPageSize),
+      start: String((searchPage - 1) * searchPageSize + 1),
+    }),
     categories = useGetBookCategoryListQuery(),
     recent = useGetRecentBookListQuery(),
     create = useCreateBookSummaryMutation(),
     edit = useEditBookSummaryMutation(),
     pending = create.isPending || edit.isPending;
+  const searchTotal = Math.min(
+    search.data?.meta?.pageable_count ?? search.data?.total ?? 0,
+    searchPageSize * 50,
+  );
+  const searchPageCount = Math.max(1, Math.ceil(searchTotal / searchPageSize));
+  const canSearchNext =
+    searchPage < searchPageCount &&
+    search.data?.meta?.is_end !== true &&
+    search.data?.items.length === searchPageSize;
+  const submitBookSearch = () => {
+    const term = query.trim();
+    if (!term || search.isFetching) return;
+    if (term === searchQuery && searchPage === 1) void search.refetch();
+    else {
+      setSearchPage(1);
+      setSearchQuery(term);
+    }
+  };
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 640px)");
+    const updatePageSize = () => {
+      setSearchPageSize(desktop.matches ? 8 : 4);
+      setSearchPage(1);
+    };
+    updatePageSize();
+    desktop.addEventListener("change", updatePageSize);
+    return () => desktop.removeEventListener("change", updatePageSize);
+  }, []);
   useEffect(() => {
     if (!Cookies.get("access_token"))
       router.replace(
@@ -165,35 +201,29 @@ export function RecordEditor({
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") {
+                        if (e.key === "Enter" && !e.nativeEvent.isComposing) {
                           e.preventDefault();
-                          if (query.trim())
-                            search.mutate({
-                              query: query.trim(),
-                              display: "10",
-                            });
+                          submitBookSearch();
                         }
                       }}
                     />
                     <Button
                       type="button"
                       variant="outline"
-                      disabled={!query.trim() || search.isPending}
-                      onClick={() =>
-                        search.mutate({ query: query.trim(), display: "10" })
-                      }
+                      disabled={!query.trim() || search.isFetching}
+                      onClick={submitBookSearch}
                     >
-                      도서 검색
+                      {search.isFetching ? "검색 중…" : "도서 검색"}
                     </Button>
                   </div>
                 </div>
-                {!search.data && !!recent.data?.length && (
+                {!searchQuery && !!recent.data?.length && (
                   <div className="space-y-3 rounded-sm bg-muted p-4">
                     <p className="text-sm font-semibold">최근 찾아본 도서</p>
                     <div className="flex flex-wrap gap-2">
-                      {recent.data.slice(0, 5).map((item) => (
+                      {recent.data.slice(0, 5).map((item, index) => (
                         <Button
-                          key={item.isbn}
+                          key={`${item.isbn || item.link || item.title}:${index}`}
                           type="button"
                           variant="outline"
                           className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left"
@@ -210,19 +240,34 @@ export function RecordEditor({
                     책을 검색하지 못했어요. 다시 시도해 주세요.
                   </p>
                 )}
+                {searchQuery && search.isPending && (
+                  <p role="status" className="text-sm text-muted-foreground">
+                    책을 검색하고 있어요.
+                  </p>
+                )}
                 {search.data && (
-                  <div className="space-y-4 rounded-sm border p-4">
-                    <p className="text-sm font-semibold">
-                      기록할 책을 선택하세요.
-                    </p>
+                  <div
+                    aria-busy={search.isFetching}
+                    className="space-y-4 rounded-sm border p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-semibold">
+                        기록할 책을 선택하세요.
+                      </p>
+                      <p role="status" className="text-xs text-muted-foreground">
+                        {search.isFetching
+                          ? "검색 중…"
+                          : `검색 결과 ${search.data.total.toLocaleString()}권`}
+                      </p>
+                    </div>
                     {search.data.items.length === 0 && (
                       <p className="text-sm text-muted-foreground">
                         검색 결과가 없어요.
                       </p>
                     )}
-                    {search.data.items.map((b) => (
+                    {search.data.items.map((b, index) => (
                       <div
-                        key={b.isbn}
+                        key={`${b.isbn || b.link || b.title}:${index}`}
                         className="flex flex-wrap items-center gap-4"
                       >
                         <BookCover
@@ -239,6 +284,7 @@ export function RecordEditor({
                         <Button
                           type="button"
                           variant="outline"
+                          disabled={search.isFetching}
                           onClick={() => {
                             setBook(b);
                             setErrors((e) => ({ ...e, book: "" }));
@@ -248,6 +294,37 @@ export function RecordEditor({
                         </Button>
                       </div>
                     ))}
+                    {searchTotal > searchPageSize && (
+                      <nav
+                        aria-label="도서 검색 결과 페이지"
+                        className="flex items-center justify-center gap-4 border-t pt-4"
+                      >
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          aria-label="이전 도서 검색 결과"
+                          disabled={searchPage === 1 || search.isFetching}
+                          onClick={() => setSearchPage((page) => page - 1)}
+                        >
+                          <ChevronLeft aria-hidden="true" />
+                        </Button>
+                        <span className="min-w-16 text-center text-sm tabular-nums">
+                          {searchPage} / {searchPageCount}
+                          <span className="sr-only"> 페이지</span>
+                        </span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          aria-label="다음 도서 검색 결과"
+                          disabled={!canSearchNext || search.isFetching}
+                          onClick={() => setSearchPage((page) => page + 1)}
+                        >
+                          <ChevronRight aria-hidden="true" />
+                        </Button>
+                      </nav>
+                    )}
                   </div>
                 )}
               </div>
