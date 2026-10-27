@@ -7,6 +7,7 @@ const {
   getBookSummaryList,
   getSearchBookSummaryList,
   getRecordsForBook,
+  getBookList,
 } = require("../src/repository/book.repository.ts");
 const { createQueryClient } = require("../src/lib/react-query.ts");
 const {
@@ -197,4 +198,36 @@ test("groups replies in a single traversal, preserving order and replies precedi
   const grouped = toSummaryCommentListModel(many);
   assert.equal(grouped.length, 5000);
   assert.ok(grouped.every((parent) => parent.reply.length === 1));
+});
+
+test("fetches book list with pagination parameters", async () => {
+  let requestedUrl = "";
+  let requestedParams = null;
+  client.defaults.adapter = async (config) => {
+    requestedUrl = config.url;
+    requestedParams = config.params;
+    return respond(
+      {
+        items: [
+          {
+            title: "어린왕자",
+            author: "생텍쥐페리",
+            publisher: "열린책들",
+            pubdate: "20151020",
+            image: "https://example.com/cover.jpg",
+            isbn: "9788932917245",
+          },
+        ],
+        total_count: 1,
+        page_no: 1,
+      },
+      config,
+    );
+  };
+  const result = await getBookList({ page_no: 1, page_size: 20, title: "어린왕자" });
+  assert.equal(requestedUrl, "/book/list");
+  assert.deepEqual(requestedParams, { page_no: 1, page_size: 20, title: "어린왕자" });
+  assert.equal(result.total_count, 1);
+  assert.equal(result.items.length, 1);
+  assert.equal(result.items[0].title, "어린왕자");
 });

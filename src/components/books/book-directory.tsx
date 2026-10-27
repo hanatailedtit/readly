@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useState, useMemo } from "react";
 import { useBookCatalog } from "@/service/library.service";
 import {
-  useSearchBookMutation,
+  useGetBookListQuery,
   useGetRecentBookListQuery,
 } from "@/service/book.service";
 import { BookCover } from "./book-cover";
@@ -20,15 +20,30 @@ import {
 } from "@/components/ui/select";
 import { LoadError, PageNumbers } from "@/components/records/record-list";
 import { recordBookKey, type CatalogBook } from "@/lib/records";
+
+const PAGE_SIZE = 20;
+
 export function BookDirectory() {
-  const catalog = useBookCatalog(),
-    recent = useGetRecentBookListQuery(),
-    search = useSearchBookMutation(),
-    [text, setText] = useState(""),
-    [searched, setSearched] = useState(false),
+  const [text, setText] = useState(""),
+    [searchKeyword, setSearchKeyword] = useState(""),
     [onlyRecorded, setOnlyRecorded] = useState(false),
     [order, setOrder] = useState("count"),
     [page, setPage] = useState(1);
+
+  const bookListQuery = useGetBookListQuery(
+    onlyRecorded
+      ? undefined
+      : {
+          page_no: page,
+          page_size: PAGE_SIZE,
+          title: searchKeyword || undefined,
+        },
+    { enabled: !onlyRecorded },
+  );
+
+  const catalog = useBookCatalog();
+  const recent = useGetRecentBookListQuery();
+
   const available = useMemo(() => {
     const books = new Map(
       (catalog.data || []).map((book) => [recordBookKey(book), book]),
@@ -39,35 +54,57 @@ export function BookDirectory() {
     }
     return books;
   }, [catalog.data, recent.data]);
-  const books: CatalogBook[] = useMemo(
-    () =>
-      searched
-        ? (search.data?.items || []).map((book) => {
-            const existing = available.get(recordBookKey(book));
-            return {
-              ...book,
-              count: existing?.count || 0,
-              records: existing?.records || [],
-            };
-          })
-        : [...available.values()],
-    [searched, search.data, available],
-  );
-  const filtered = useMemo(
-    () =>
-      books
-        .filter((book) => !onlyRecorded || book.count > 0)
-        .sort((a, b) =>
-          order === "title"
-            ? a.title.localeCompare(b.title, "ko")
-            : order === "recent"
-              ? (b.records[0]?.createAt || "").localeCompare(
-                  a.records[0]?.createAt || "",
-                )
-              : b.count - a.count,
-        ),
-    [books, onlyRecorded, order],
-  );
+
+  const recordedBooks: CatalogBook[] = useMemo(() => {
+    const list = [...available.values()].filter((book) => book.count > 0);
+    const filtered = searchKeyword
+      ? list.filter(
+          (b) =>
+            b.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+            b.author.toLowerCase().includes(searchKeyword.toLowerCase()),
+        )
+      : list;
+    return filtered.sort((a, b) =>
+      order === "title"
+        ? a.title.localeCompare(b.title, "ko")
+        : order === "recent"
+          ? (b.records[0]?.createAt || "").localeCompare(
+              a.records[0]?.createAt || "",
+            )
+          : b.count - a.count,
+    );
+  }, [available, searchKeyword, order]);
+
+  const books: CatalogBook[] = useMemo(() => {
+    if (onlyRecorded) {
+      return recordedBooks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    }
+    const list = (bookListQuery.data?.items || []).map((book) => {
+      const existing = available.get(recordBookKey(book));
+      return {
+        ...book,
+        count: existing?.count || 0,
+        records: existing?.records || [],
+      };
+    });
+    return list.sort((a, b) =>
+      order === "title"
+        ? a.title.localeCompare(b.title, "ko")
+        : order === "recent"
+          ? (b.records[0]?.createAt || "").localeCompare(
+              a.records[0]?.createAt || "",
+            )
+          : b.count - a.count,
+    );
+  }, [onlyRecorded, recordedBooks, page, bookListQuery.data?.items, available, order]);
+
+  const totalCount = onlyRecorded
+    ? recordedBooks.length
+    : bookListQuery.data?.total_count || 0;
+
+  const isLoading = onlyRecorded ? catalog.isLoading : bookListQuery.isLoading;
+  const isError = onlyRecorded ? catalog.isError : bookListQuery.isError;
+
   return (
     <div className="space-y-8">
       <div className="space-y-4">
@@ -78,17 +115,10 @@ export function BookDirectory() {
       </div>
       <form
         className="grid gap-4 sm:grid-cols-[1fr_160px] sm:items-end"
-        onSubmit={async (e) => {
+        onSubmit={(e) => {
           e.preventDefault();
           setPage(1);
-          if (!text.trim()) {
-            setSearched(false);
-            return;
-          }
-          setSearched(true);
-          try {
-            await search.mutateAsync({ query: text.trim(), display: "100" });
-          } catch {}
+          setSearchKeyword(text.trim());
         }}
       >
         <div className="space-y-2">
@@ -100,7 +130,7 @@ export function BookDirectory() {
             onChange={(e) => setText(e.target.value)}
           />
         </div>
-        <Button type="submit" disabled={search.isPending}>
+        <Button type="submit" disabled={isLoading}>
           검색
         </Button>
       </form>
@@ -119,7 +149,7 @@ export function BookDirectory() {
           />
         </div>
         <span className="font-semibold sm:mr-auto sm:pl-8">
-          {filtered.length}권
+          {totalCount.toLocaleString()}권
         </span>
         <Select
           value={order}
@@ -138,17 +168,18 @@ export function BookDirectory() {
           </SelectContent>
         </Select>
       </div>
-      {catalog.isError || search.isError ? (
+      {isError ? (
         <LoadError
-          retry={() =>
-            searched ? search.mutate({ query: text }) : catalog.refetch()
-          }
+          retry={() => {
+            if (onlyRecorded) catalog.refetch();
+            else bookListQuery.refetch();
+          }}
         />
       ) : (
         <>
-          {!(catalog.isLoading || search.isPending) && (
+          {!isLoading && (
             <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
-              {filtered.slice((page - 1) * 12, page * 12).map((b) => (
+              {books.map((b) => (
                 <Link
                   key={b.isbn || b.title}
                   href={`/books/${encodeURIComponent(b.isbn || b.title)}`}
@@ -177,16 +208,23 @@ export function BookDirectory() {
               ))}
             </div>
           )}
-          {(!filtered.length || catalog.isLoading || search.isPending) && (
+          {(!books.length || isLoading) && (
             <div className="bg-muted p-10 text-center text-muted-foreground">
-              {catalog.isLoading || search.isPending
+              {isLoading
                 ? "도서를 불러오고 있어요."
-                : "아직 도서가 없어요. 책 제목으로 검색해보세요."}
+                : searchKeyword
+                  ? "검색 결과가 없어요. 다른 검색어로 찾아보세요."
+                  : "아직 도서가 없어요."}
             </div>
           )}
         </>
       )}
-      <PageNumbers page={page} total={filtered.length} onChange={setPage} />
+      <PageNumbers
+        page={page}
+        total={totalCount}
+        pageSize={PAGE_SIZE}
+        onChange={setPage}
+      />
     </div>
   );
 }

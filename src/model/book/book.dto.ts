@@ -41,6 +41,41 @@ export type SearchBookItem = {
   isbn: string;
 };
 
+export type BookListRequest = {
+  page_no?: number;
+  page_size?: number;
+  title?: string;
+  author?: string;
+};
+
+export type BookListItemDto = {
+  title: string;
+  author: string;
+  publisher: string;
+  pubdate: string;
+  image: string;
+  isbn: string;
+  link?: string;
+};
+
+export type BookListResponse = {
+  items: BookListItemDto[];
+  total_count: number;
+  page_no: number;
+};
+
+export const toBookListItemModel = (item: BookListItemDto): SearchBookItem => {
+  return {
+    title: item.title,
+    author: item.author ? item.author.replaceAll("^", ", ") : "",
+    publisher: item.publisher || "",
+    pubdate: item.pubdate || "",
+    image: item.image || "",
+    isbn: item.isbn || "",
+    link: item.link || "",
+  };
+};
+
 export const toSearchBookItemModel = (item: SearchBookResponse) => {
   const bookItem: SearchBookItem[] = item.items.map((item) => {
     return {

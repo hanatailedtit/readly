@@ -9,6 +9,7 @@ export const COMMENT_KEY = "comment-key" as const;
 
 export const BOOK_INFO_KEY = "book-info" as const;
 export const BOOK_SEARCH_KEY = "book-search" as const;
+export const BOOK_LIST_KEY = "book-list" as const;
 
 // 권한에 따라 응답이 달라지는 쿼리만 로그인·로그아웃 시 갱신한다.
 export const isSessionQuery = ({

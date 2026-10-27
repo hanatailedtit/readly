@@ -5,16 +5,19 @@ import {
   BOOK_RANK_KEY,
   BOOK_SUMMARY_KEY,
   BOOK_SUMMARY_LIKE_KEY,
+  BOOK_LIST_KEY,
 } from "@/constants/query-key.constants";
 import { useGetUserMyInfoQuery } from "./user.service";
 import { bookFromRecord } from "@/lib/records";
 import {
+  BookListRequest,
   BookSummaryItemDto,
   BookSummaryListRequest,
   SearchBookRequest,
   SearchBookResponse,
   SearchBookSummaryListRequest,
   toBookCreatedRankModel,
+  toBookListItemModel,
   toBookSummaryItemModel,
   toDetailBookSummaryModel,
   toRecentBookItemModel,
@@ -26,6 +29,7 @@ import {
   deleteDetailBookSummary,
   editBookSummary,
   getBookCreatedRank,
+  getBookList,
   getBookSummaryLikeCount,
   getDetailBookSummary,
   getRecentBookList,
@@ -76,6 +80,44 @@ export const useGetRecentBookListQuery = () => {
     queryFn: async ({ signal }) => {
       const data = await getRecentBookList(signal);
       return data.map((item) => toRecentBookItemModel(item));
+    },
+    staleTime: 60_000,
+  });
+};
+
+export const useGetBookListQuery = (
+  params?: BookListRequest,
+  options?: { enabled?: boolean },
+) => {
+  const queryClient = useQueryClient();
+  const pageNo = params?.page_no ?? 1;
+  const pageSize = params?.page_size ?? 20;
+  const title = params?.title ?? "";
+  const author = params?.author ?? "";
+
+  return useQuery({
+    queryKey: [BOOK_LIST_KEY, pageNo, pageSize, title, author],
+    enabled: options?.enabled ?? true,
+    queryFn: async ({ signal }) => {
+      const data = await getBookList(
+        {
+          page_no: pageNo,
+          page_size: pageSize,
+          title: title || undefined,
+          author: author || undefined,
+        },
+        signal,
+      );
+      const items = data.items.map(toBookListItemModel);
+      for (const book of items) {
+        if (book.isbn) {
+          queryClient.setQueryData([BOOK_INFO_KEY, book.isbn], book);
+        }
+      }
+      return {
+        ...data,
+        items,
+      };
     },
     staleTime: 60_000,
   });

@@ -2,6 +2,8 @@ import { readlyApiAxiosInstance } from "@/api/readly-api";
 import {
   BookCategoryDto,
   BookCreatedRankDto,
+  BookListRequest,
+  BookListResponse,
   BookSummaryItemDto,
   BookSummaryLikeCountResponse,
   BookSummaryListRequest,
@@ -34,6 +36,24 @@ export const getRecentBookList = async (signal?: AbortSignal) => {
     { signal },
   );
   return data;
+};
+
+export const getBookList = async (
+  params: BookListRequest = { page_no: 1, page_size: 20 },
+  signal?: AbortSignal,
+) => {
+  const { data } = await readlyApiAxiosInstance().get<BookListResponse>(
+    "/book/list",
+    {
+      params,
+      signal,
+    },
+  );
+  return {
+    items: data?.items || [],
+    total_count: data?.total_count || 0,
+    page_no: data?.page_no || params.page_no || 1,
+  };
 };
 
 export const getBookCreatedRank = async () => {
