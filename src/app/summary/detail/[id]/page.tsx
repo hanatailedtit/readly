@@ -20,6 +20,7 @@ import { Comments } from "@/components/records/comments";
 import { DeleteDialog } from "@/components/records/delete-dialog";
 import { LoadError } from "@/components/records/record-list";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,15 +61,29 @@ export default function RecordDetailPage() {
           <h1 className="font-display text-[28px] font-bold leading-relaxed sm:text-[34px]">
             {recordTitle(record)}
           </h1>
-          <p className="text-sm text-muted-foreground">
-            <Link
-              href={`/my-page/${record.userId}`}
-              className="hover:underline"
-            >
-              {record.userName}
-            </Link>{" "}
-            · {formatDate(record.createAt)} · 조회 {record.viewCount || 0}
-          </p>
+          <div className="flex items-center gap-3">
+            <Link href={`/my-page/${record.userId}`}>
+              <Avatar className="h-9 w-9">
+                <AvatarImage
+                  src={record.userImage}
+                  alt={record.userName}
+                  referrerPolicy="no-referrer"
+                />
+                <AvatarFallback className="text-xs">
+                  {record.userName?.slice(0, 1)}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
+            <p className="text-sm text-muted-foreground">
+              <Link
+                href={`/my-page/${record.userId}`}
+                className="font-medium text-foreground hover:underline"
+              >
+                {record.userName}
+              </Link>{" "}
+              · {formatDate(record.createAt)} · 조회 {record.viewCount || 0}
+            </p>
+          </div>
           <div className="flex flex-wrap gap-3">
             <Button
               variant="outline"

@@ -14,6 +14,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "readlyapi.createdoodle.dev",
       },
+      {
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
+      },
     ],
   },
   async rewrites() {

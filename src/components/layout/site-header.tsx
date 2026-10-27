@@ -6,6 +6,7 @@ import Cookies from "js-cookie";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetUserMyInfoQuery } from "@/service/user.service";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -76,8 +77,18 @@ export function SiteHeader() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="max-w-24 truncate">
-                  {user.nickname}
+                <Button variant="ghost" className="flex items-center gap-2 px-2">
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage
+                      src={user.profile_image}
+                      alt={user.nickname}
+                      referrerPolicy="no-referrer"
+                    />
+                    <AvatarFallback className="text-xs">
+                      {user.nickname?.slice(0, 1)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="max-w-24 truncate">{user.nickname}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">

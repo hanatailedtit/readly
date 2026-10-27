@@ -12,6 +12,7 @@ import {
 import type { SummaryCommentItemModel } from "@/model/comment/comment.model";
 import { formatDate } from "@/lib/records";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { DeleteDialog } from "./delete-dialog";
@@ -56,12 +57,24 @@ export function Comments({ id }: { id: number }) {
       }
     >
       <div className="flex items-center justify-between gap-3">
-        <Link
-          href={`/my-page/${comment.userId}`}
-          className="text-sm font-semibold hover:underline"
-        >
-          {comment.userName}
-        </Link>
+        <div className="flex items-center gap-2">
+          <Avatar className="h-6 w-6">
+            <AvatarImage
+              src={comment.userImage}
+              alt={comment.userName}
+              referrerPolicy="no-referrer"
+            />
+            <AvatarFallback className="text-[10px]">
+              {comment.userName?.slice(0, 1)}
+            </AvatarFallback>
+          </Avatar>
+          <Link
+            href={`/my-page/${comment.userId}`}
+            className="text-sm font-semibold hover:underline"
+          >
+            {comment.userName}
+          </Link>
+        </div>
         {comment.isMy && user && (
           <Button
             variant="ghost"

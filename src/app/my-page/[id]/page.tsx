@@ -36,7 +36,11 @@ export default function ProfilePage() {
       <section className="space-y-5 rounded-sm bg-muted p-6">
         <div className="flex items-center gap-5">
           <Avatar className="h-20 w-20">
-            <AvatarImage src={info.data?.profile_image} alt="프로필" />
+            <AvatarImage
+              src={info.data?.profile_image}
+              alt="프로필"
+              referrerPolicy="no-referrer"
+            />
             <AvatarFallback>{info.data?.nickname.slice(0, 1)}</AvatarFallback>
           </Avatar>
           <div>
