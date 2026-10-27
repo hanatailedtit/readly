@@ -1,20 +1,13 @@
 "use client";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 import { toast } from "sonner";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  useLoginByDefaultMutation,
-  useLoginByGoogleMutation,
-} from "@/service/auth.service";
+import { useLoginByGoogleMutation } from "@/service/auth.service";
 import { safeReturnPath } from "@/lib/records";
-type Values = { id: string; password: string };
+
 export default function LoginPage() {
   return (
     <GoogleOAuthProvider
@@ -24,17 +17,13 @@ export default function LoginPage() {
     </GoogleOAuthProvider>
   );
 }
+
 function LoginForm() {
   const router = useRouter(),
     params = useSearchParams(),
-    login = useLoginByDefaultMutation(),
     google = useLoginByGoogleMutation(),
     [message, setMessage] = useState("");
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<Values>();
+
   const destination = safeReturnPath(params.get("next"));
   const googleLogin = useGoogleLogin({
     flow: "auth-code",
@@ -49,98 +38,59 @@ function LoginForm() {
     onError: () =>
       setMessage("Google 로그인에 실패했어요. 다시 시도해 주세요."),
   });
+
   return (
     <AuthLayout>
-      <form
-        className="space-y-6"
-        onSubmit={handleSubmit(async (values) => {
-          setMessage("");
-          try {
-            const result = await login.mutateAsync({
-              user_id: values.id,
-              password: values.password,
-            });
-            if (result.isSuccess) router.replace(destination);
-            else
-              setMessage(
-                result.message || "아이디와 비밀번호를 확인해 주세요.",
-              );
-          } catch {
-            setMessage("로그인하지 못했어요. 잠시 후 다시 시도해 주세요.");
-          }
-        })}
-      >
+      <div className="space-y-6">
         <div className="space-y-4 pb-2">
           <h1 className="page-title">다시 만나 반가워요</h1>
           <p className="text-muted-foreground">
-            독서 기록을 이어가려면 로그인해 주세요.
+            독서 기록을 이어가려면 Google 계정으로 로그인해 주세요.
           </p>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="login-id">아이디</Label>
-          <Input
-            id="login-id"
-            autoComplete="username"
-            placeholder="아이디를 입력하세요."
-            aria-invalid={!!errors.id}
-            aria-describedby={errors.id ? "login-id-error" : undefined}
-            {...register("id", { required: "아이디를 입력해 주세요." })}
-          />
-          {errors.id && (
-            <p id="login-id-error" className="field-error" role="alert">
-              {errors.id.message}
-            </p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="login-password">비밀번호</Label>
-          <Input
-            id="login-password"
-            autoComplete="current-password"
-            type="password"
-            placeholder="비밀번호를 입력하세요."
-            aria-invalid={!!errors.password}
-            {...register("password", { required: "비밀번호를 입력해 주세요." })}
-          />
-          {errors.password && (
-            <p className="field-error" role="alert">
-              {errors.password.message}
-            </p>
-          )}
-        </div>
+
         {message && (
           <p className="field-error" role="alert">
             {message}
           </p>
         )}
-        <Button className="w-full" type="submit" disabled={login.isPending}>
-          {login.isPending ? "로그인 중…" : "로그인"}
-        </Button>
-        <p className="text-center text-sm text-muted-foreground">또는</p>
+
         <Button
-          className="w-full"
+          className="w-full flex items-center justify-center gap-3 py-6 text-base"
           type="button"
           variant="outline"
           disabled={google.isPending}
           onClick={() => {
             if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
               toast.error(
-                "Google 로그인을 현재 사용할 수 없어요. 아이디로 로그인해 주세요.",
+                "Google 로그인을 현재 사용할 수 없어요. 관리자에게 문의해 주세요.",
               );
               return;
             }
             googleLogin();
           }}
         >
-          Google로 계속하기
+          <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+            />
+          </svg>
+          {google.isPending ? "Google 로그인 중…" : "Google로 계속하기"}
         </Button>
-        <p className="text-center text-sm text-muted-foreground">
-          아직 계정이 없으신가요?
-        </p>
-        <Button className="w-full" asChild variant="ghost">
-          <Link href="/sign-up">회원가입</Link>
-        </Button>
-      </form>
+      </div>
     </AuthLayout>
   );
 }

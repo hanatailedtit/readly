@@ -104,18 +104,13 @@ export function SiteHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <>
-              <Button
-                asChild
-                variant="ghost"
-                className="order-2 px-2 sm:order-none sm:px-4"
-              >
-                <Link href="/login">로그인</Link>
-              </Button>
-              <Button asChild variant="ghost" className="hidden sm:inline-flex">
-                <Link href="/sign-up">회원가입</Link>
-              </Button>
-            </>
+            <Button
+              asChild
+              variant="ghost"
+              className="order-2 px-2 sm:order-none sm:px-4"
+            >
+              <Link href="/login">로그인</Link>
+            </Button>
           )}
           <Button asChild className="px-3 sm:min-w-[168px]">
             <Link href="/summary/create">
