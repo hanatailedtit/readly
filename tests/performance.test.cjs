@@ -8,6 +8,7 @@ const {
   getSearchBookSummaryList,
   getRecordsForBook,
   getBookList,
+  getCatalogRecords,
 } = require("../src/repository/book.repository.ts");
 const { createQueryClient } = require("../src/lib/react-query.ts");
 const {
@@ -230,4 +231,36 @@ test("fetches book list with pagination parameters", async () => {
   assert.equal(result.total_count, 1);
   assert.equal(result.items.length, 1);
   assert.equal(result.items[0].title, "어린왕자");
+});
+
+test("catalog stops repeating pages and does not inflate book record counts", async () => {
+  let calls = 0;
+  const repeated = Array.from({ length: 100 }, (_, index) => ({ id: index + 1 }));
+  client.defaults.adapter = async (config) => {
+    calls++;
+    return respond({ total: 300, list: repeated, nextOffset: 1 }, config);
+  };
+  const records = await getCatalogRecords();
+  assert.equal(records.length, 100);
+  assert.equal(new Set(records.map(record => record.id)).size, 100);
+  assert.equal(calls, 2);
+});
+
+test("catalog preserves unique records across overlapping pages and forwards cancellation", async () => {
+  const signal = new AbortController().signal;
+  const offsets = [];
+  client.defaults.adapter = async (config) => {
+    assert.equal(config.signal, signal);
+    offsets.push(config.params.offset);
+    const start = config.params.offset ? 91 : 1;
+    return respond({
+      total: 150,
+      list: Array.from({ length: config.params.offset ? 60 : 100 }, (_, index) => ({ id: start + index })),
+      nextOffset: null,
+    }, config);
+  };
+  const records = await getCatalogRecords(signal);
+  assert.equal(records.length, 150);
+  assert.deepEqual(records.map(record => record.id), Array.from({ length: 150 }, (_, index) => index + 1));
+  assert.deepEqual(offsets, [0, 100]);
 });

@@ -15,6 +15,7 @@ import {
   BookSummaryListRequest,
   SearchBookRequest,
   SearchBookResponse,
+  SearchBookItem,
   SearchBookSummaryListRequest,
   toBookCreatedRankModel,
   toBookListItemModel,
@@ -123,7 +124,10 @@ export const useGetBookListQuery = (
       const items = data.items.map(toBookListItemModel);
       for (const book of items) {
         if (book.isbn) {
-          queryClient.setQueryData([BOOK_INFO_KEY, book.isbn], book);
+          queryClient.setQueryData<SearchBookItem>(
+            [BOOK_INFO_KEY, book.isbn],
+            (cached) => cached ?? book,
+          );
         }
       }
       return {

@@ -152,6 +152,27 @@ export const getSearchBookSummaryList = async (
   return Array.isArray(data) ? { total: 0, list: [], nextOffset: null } : data;
 };
 
+export const getCatalogRecords = async (signal?: AbortSignal) => {
+  const records: BookSummaryItemDto[] = [];
+  const seen = new Set<number>();
+  let offset = 0;
+  while (true) {
+    const result = await getBookSummaryList(
+      { order: "desc", limit: 100, offset },
+      signal,
+    );
+    let added = 0;
+    for (const record of result.list) {
+      if (seen.has(record.id)) continue;
+      seen.add(record.id);
+      records.push(record);
+      added++;
+    }
+    if (!added || records.length >= result.total) return records;
+    offset += result.list.length;
+  }
+};
+
 export const getRecordsForBook = async (
   book: SearchBookItem,
   signal?: AbortSignal,

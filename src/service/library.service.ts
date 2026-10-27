@@ -10,12 +10,13 @@ import {
   getRecordsForBook,
   searchBookList,
   getUserRecords,
+  getCatalogRecords,
 } from "@/repository/book.repository";
 import {
   toBookSummaryItemModel,
   toSearchBookItemModel,
 } from "@/model/book/book.dto";
-import type { SearchBookItem, BookSummaryItemDto } from "@/model/book/book.dto";
+import type { SearchBookItem } from "@/model/book/book.dto";
 import {
   groupBooks,
   categoryKeyword,
@@ -124,21 +125,7 @@ export function useBookCatalog() {
     staleTime: 60_000,
     queryFn: async ({ signal }) => {
       // shortcut: 도서별 집계 API가 생기면 전체 기록 조회를 서버 집계로 교체한다.
-      const records: BookSummaryItemDto[] = [];
-      let offset = 0;
-      while (true) {
-        const result = await getBookSummaryList(
-          {
-            order: "desc",
-            limit: 100,
-            offset,
-          },
-          signal,
-        );
-        records.push(...result.list);
-        if (!result.list.length || records.length >= result.total) break;
-        offset += result.list.length;
-      }
+      const records = await getCatalogRecords(signal);
       return groupBooks(records.map(toBookSummaryItemModel));
     },
   });

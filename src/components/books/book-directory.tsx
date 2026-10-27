@@ -2,10 +2,7 @@
 import Link from "next/link";
 import { useState, useMemo } from "react";
 import { useBookCatalog } from "@/service/library.service";
-import {
-  useGetBookListQuery,
-  useGetRecentBookListQuery,
-} from "@/service/book.service";
+import { useGetBookListQuery } from "@/service/book.service";
 import { BookCover } from "./book-cover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,51 +39,32 @@ export function BookDirectory() {
   );
 
   const catalog = useBookCatalog();
-  const recent = useGetRecentBookListQuery();
+  const available = useMemo(
+    () =>
+      new Map(
+        (catalog.data || []).map((book) => [recordBookKey(book), book]),
+      ),
+    [catalog.data],
+  );
 
-  const available = useMemo(() => {
-    const books = new Map(
-      (catalog.data || []).map((book) => [recordBookKey(book), book]),
-    );
-    for (const book of recent.data || []) {
-      const key = recordBookKey(book);
-      if (!books.has(key)) books.set(key, { ...book, count: 0, records: [] });
-    }
-    return books;
-  }, [catalog.data, recent.data]);
-
-  const recordedBooks: CatalogBook[] = useMemo(() => {
-    const list = [...available.values()].filter((book) => book.count > 0);
-    const filtered = searchKeyword
-      ? list.filter(
-          (b) =>
-            b.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-            b.author.toLowerCase().includes(searchKeyword.toLowerCase()),
+  const sortedBooks: CatalogBook[] = useMemo(() => {
+    const keyword = searchKeyword.toLowerCase();
+    const list = onlyRecorded
+      ? [...available.values()].filter(
+          (book) =>
+            book.count > 0 &&
+            (!keyword ||
+              book.title.toLowerCase().includes(keyword) ||
+              book.author.toLowerCase().includes(keyword)),
         )
-      : list;
-    return filtered.sort((a, b) =>
-      order === "title"
-        ? a.title.localeCompare(b.title, "ko")
-        : order === "recent"
-          ? (b.records[0]?.createAt || "").localeCompare(
-              a.records[0]?.createAt || "",
-            )
-          : b.count - a.count,
-    );
-  }, [available, searchKeyword, order]);
-
-  const books: CatalogBook[] = useMemo(() => {
-    if (onlyRecorded) {
-      return recordedBooks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-    }
-    const list = (bookListQuery.data?.items || []).map((book) => {
-      const existing = available.get(recordBookKey(book));
-      return {
-        ...book,
-        count: existing?.count || 0,
-        records: existing?.records || [],
-      };
-    });
+      : (bookListQuery.data?.items || []).map((book) => {
+          const existing = available.get(recordBookKey(book));
+          return {
+            ...book,
+            count: existing?.count || 0,
+            records: existing?.records || [],
+          };
+        });
     return list.sort((a, b) =>
       order === "title"
         ? a.title.localeCompare(b.title, "ko")
@@ -96,11 +74,17 @@ export function BookDirectory() {
             )
           : b.count - a.count,
     );
-  }, [onlyRecorded, recordedBooks, page, bookListQuery.data?.items, available, order]);
+  }, [onlyRecorded, searchKeyword, bookListQuery.data?.items, available, order]);
 
   const totalCount = onlyRecorded
-    ? recordedBooks.length
+    ? sortedBooks.length
     : bookListQuery.data?.total_count || 0;
+  const currentPage = onlyRecorded
+    ? Math.min(page, Math.max(1, Math.ceil(totalCount / PAGE_SIZE)))
+    : page;
+  const books = onlyRecorded
+    ? sortedBooks.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+    : sortedBooks;
 
   const isLoading = onlyRecorded ? catalog.isLoading : bookListQuery.isLoading;
   const isError = onlyRecorded ? catalog.isError : bookListQuery.isError;
@@ -220,7 +204,7 @@ export function BookDirectory() {
         </>
       )}
       <PageNumbers
-        page={page}
+        page={currentPage}
         total={totalCount}
         pageSize={PAGE_SIZE}
         onChange={setPage}

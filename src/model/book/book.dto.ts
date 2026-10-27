@@ -82,12 +82,15 @@ export const toBookListItemModel = (item: BookListItemDto): SearchBookItem => {
 
 export const toSearchBookItemModel = (item: SearchBookResponse) => {
   const bookItem: SearchBookItem[] = item.items.map((item) => {
+    const publicationDate = transferStringToDate(item.pubdate, "yyyyMMdd");
     return {
       author: item.author.replaceAll("^", ", "),
       image: item.image,
       isbn: item.isbn,
       link: item.link,
-      pubdate: transferStringToDate(item.pubdate, "yyyyMMdd").toISOString(),
+      pubdate: Number.isNaN(publicationDate.getTime())
+        ? ""
+        : publicationDate.toISOString(),
       publisher: item.publisher,
       title: item.title,
     };
