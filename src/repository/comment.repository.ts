@@ -2,6 +2,7 @@ import { readlyApiAxiosInstance } from "@/api/readly-api";
 import { BookSummaryItemModel } from "@/model/book/book.model";
 import {
   CreateSummaryCommentRequest,
+  EditSummaryCommentRequest,
   SummaryCommentItemDto,
 } from "@/model/comment/comment.dto";
 
@@ -30,4 +31,8 @@ export const getSummaryCommentList = async (
 
 export const deleteSummaryComment = async (id: SummaryCommentItemDto["id"]) => {
   await readlyApiAxiosInstance().delete("/comment/delete", { params: { id } });
+};
+
+export const editSummaryComment = async (params: EditSummaryCommentRequest) => {
+  await readlyApiAxiosInstance().put("/comment/edit", params);
 };

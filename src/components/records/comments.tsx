@@ -8,10 +8,13 @@ import {
   useGetSummaryCommentListQuery,
   useCreateSummaryCommentMutation,
   useDeleteSummaryCommentMutation,
+  useEditSummaryCommentMutation,
 } from "@/service/comment.service";
 import type { SummaryCommentItemModel } from "@/model/comment/comment.model";
 import { formatDate } from "@/lib/records";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { CommentComposer } from "./comment-composer";
 import { DeleteDialog } from "./delete-dialog";
@@ -20,12 +23,35 @@ export function Comments({ id }: { id: number }) {
   const query = useGetSummaryCommentListQuery(id),
     { data: user } = useGetUserMyInfoQuery(),
     create = useCreateSummaryCommentMutation(),
+    edit = useEditSummaryCommentMutation(id),
     remove = useDeleteSummaryCommentMutation(id);
   const [text, setText] = useState(""),
     [replyId, setReplyId] = useState<number | null>(null),
     [replies, setReplies] = useState<Record<number, string>>({}),
     [deleteId, setDeleteId] = useState<number | null>(null),
+    [editing, setEditing] = useState<{
+      id: number;
+      value: string;
+      original: string;
+    } | null>(null),
     [visible, setVisible] = useState(5);
+  const saveEdit = async () => {
+    const value = editing?.value.trim();
+    if (
+      !editing ||
+      !value ||
+      !user ||
+      edit.isPending ||
+      value === editing.original.trim()
+    ) return;
+    try {
+      await edit.mutateAsync({ id: editing.id, comment: value });
+      setEditing(null);
+      toast.success("댓글을 수정했어요.");
+    } catch {
+      toast.error("댓글을 수정하지 못했어요. 다시 시도해 주세요.");
+    }
+  };
   const submit = async (commentId: number | null) => {
     const value = (commentId === null ? text : replies[commentId] || "").trim();
     if (!value || !user) return;
@@ -56,7 +82,7 @@ export function Comments({ id }: { id: number }) {
       }
     >
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <Avatar className="h-6 w-6">
             <AvatarImage
               src={comment.userImage}
@@ -75,22 +101,87 @@ export function Comments({ id }: { id: number }) {
           </Link>
         </div>
         {comment.isMy && user && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setDeleteId(comment.id)}
-            className="text-destructive"
-          >
-            삭제
-          </Button>
+          <div className="flex shrink-0 gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={editing !== null}
+              onClick={() =>
+                setEditing({
+                  id: comment.id,
+                  value: comment.comment,
+                  original: comment.comment,
+                })
+              }
+            >
+              수정
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={editing !== null}
+              onClick={() => setDeleteId(comment.id)}
+              className="text-destructive"
+            >
+              삭제
+            </Button>
+          </div>
         )}
       </div>
       <p className="text-xs text-muted-foreground">
         {formatDate(comment.createdAt)}
       </p>
-      <p className="whitespace-pre-wrap text-base leading-relaxed">
-        {comment.comment}
-      </p>
+      {editing?.id === comment.id && comment.isMy && user ? (
+        <form
+          className="space-y-3"
+          aria-busy={edit.isPending}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void saveEdit();
+          }}
+        >
+          <Label htmlFor={`edit-comment-${comment.id}`}>
+            {reply ? "답글 수정" : "댓글 수정"}
+          </Label>
+          <Textarea
+            id={`edit-comment-${comment.id}`}
+            autoFocus
+            rows={3}
+            className="min-h-[112px] bg-background text-base leading-relaxed shadow-none md:text-base"
+            value={editing.value}
+            disabled={edit.isPending}
+            onChange={(event) =>
+              setEditing({ ...editing, value: event.target.value })
+            }
+          />
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={edit.isPending}
+              onClick={() => setEditing(null)}
+            >
+              취소
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={
+                edit.isPending ||
+                !editing.value.trim() ||
+                editing.value.trim() === editing.original.trim()
+              }
+            >
+              {edit.isPending ? "저장 중…" : "저장"}
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <p className="whitespace-pre-wrap text-base leading-relaxed">
+          {comment.comment}
+        </p>
+      )}
       {!reply && (
         <Button
           variant="ghost"

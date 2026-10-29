@@ -20,6 +20,11 @@ export type SummaryCommentItemDto = {
   is_my: boolean;
 };
 
+export type EditSummaryCommentRequest = Pick<
+  SummaryCommentItemDto,
+  "id" | "comment"
+>;
+
 export const toSummaryCommentModel = (
   item: SummaryCommentItemDto,
 ): SummaryCommentModel => {

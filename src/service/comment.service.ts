@@ -8,6 +8,7 @@ import { toSummaryCommentListModel } from "@/model/comment/comment.dto";
 import {
   createSummaryComment,
   deleteSummaryComment,
+  editSummaryComment,
   getSummaryCommentList,
 } from "@/repository/comment.repository";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -59,5 +60,14 @@ export const useDeleteSummaryCommentMutation = (summaryId: number) => {
         }),
       ]);
     },
+  });
+};
+
+export const useEditSummaryCommentMutation = (summaryId: number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: editSummaryComment,
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: [COMMENT_KEY, summaryId] }),
   });
 };
