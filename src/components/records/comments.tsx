@@ -13,8 +13,7 @@ import type { SummaryCommentItemModel } from "@/model/comment/comment.model";
 import { formatDate } from "@/lib/records";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { CommentComposer } from "./comment-composer";
 import { DeleteDialog } from "./delete-dialog";
 import { LoadError } from "./record-list";
 export function Comments({ id }: { id: number }) {
@@ -106,42 +105,15 @@ export function Comments({ id }: { id: number }) {
   return (
     <section className="space-y-6 border-t pt-8">
       <h2 className="section-title">댓글 {query.data?.total || 0}</h2>
-      <form
-        className="space-y-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void submit(null);
-        }}
-      >
-        <Label htmlFor="comment">댓글 남기기</Label>
-        <Textarea
-          id="comment"
-          value={text}
-          disabled={!user || create.isPending}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="기록에 대한 생각을 나눠보세요."
-        />
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">
-            {user
-              ? "서로의 생각을 존중하며 이야기해 주세요."
-              : "댓글 작성은 로그인 후 가능합니다."}
-          </p>
-          {user ? (
-            <Button type="submit" disabled={!text.trim() || create.isPending}>
-              댓글 남기기
-            </Button>
-          ) : (
-            <Button asChild>
-              <Link
-                href={`/login?next=${encodeURIComponent("/summary/detail/" + id)}`}
-              >
-                로그인 후 댓글 남기기
-              </Link>
-            </Button>
-          )}
-        </div>
-      </form>
+      <CommentComposer
+        id="comment"
+        user={user}
+        value={text}
+        onChange={setText}
+        onSubmit={() => void submit(null)}
+        pending={create.isPending}
+        loginHref={`/login?next=${encodeURIComponent("/summary/detail/" + id)}`}
+      />
       {query.isError ? (
         <LoadError retry={query.refetch} />
       ) : (
@@ -158,42 +130,21 @@ export function Comments({ id }: { id: number }) {
               </div>
             ))}
             {replyId === comment.id && (
-              <form
-                className="space-y-3 rounded-sm bg-muted p-4"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void submit(comment.id);
-                }}
-              >
-                <Label htmlFor={`reply-${comment.id}`}>
-                  {comment.userName} 님에게 답글
-                </Label>
-                <Textarea
+              <div className="pl-4 sm:pl-8">
+                <CommentComposer
                   id={`reply-${comment.id}`}
+                  user={user}
                   value={replies[comment.id] || ""}
-                  disabled={!user || create.isPending}
-                  onChange={(e) =>
-                    setReplies((r) => ({ ...r, [comment.id]: e.target.value }))
+                  onChange={(value) =>
+                    setReplies((r) => ({ ...r, [comment.id]: value }))
                   }
-                  placeholder="답글을 입력하세요."
+                  onSubmit={() => void submit(comment.id)}
+                  pending={create.isPending}
+                  loginHref={`/login?next=${encodeURIComponent("/summary/detail/" + id)}`}
+                  replyTo={comment.userName}
+                  onCancel={() => setReplyId(null)}
                 />
-                {user ? (
-                  <Button
-                    type="submit"
-                    disabled={!replies[comment.id]?.trim() || create.isPending}
-                  >
-                    답글 남기기
-                  </Button>
-                ) : (
-                  <Button asChild>
-                    <Link
-                      href={`/login?next=${encodeURIComponent("/summary/detail/" + id)}`}
-                    >
-                      로그인 후 답글 남기기
-                    </Link>
-                  </Button>
-                )}
-              </form>
+              </div>
             )}
           </div>
         ))
