@@ -1,13 +1,13 @@
 import { readlyApiAxiosInstance } from "@/api/readly-api"
 import { EditUserNicknameRequest, UserInfoDto } from "@/model/user.dto"
 
-export const getUserInfoData = async (id: string) => {
-  const { data } = await readlyApiAxiosInstance().get<UserInfoDto & { is_my: boolean }>('/user/info', { params: { user_id: id } })
+export const getUserInfoData = async (id: string, signal?: AbortSignal) => {
+  const { data } = await readlyApiAxiosInstance().get<UserInfoDto & { is_my: boolean }>('/user/info', { params: { user_id: id }, signal })
   return data
 }
 
-export const getUserMyInfoData = async () => {
-  const { data } = await readlyApiAxiosInstance().get<UserInfoDto>('/user/my-info')
+export const getUserMyInfoData = async (signal?: AbortSignal) => {
+  const { data } = await readlyApiAxiosInstance().get<UserInfoDto>('/user/my-info', { signal })
   return data
 }
 

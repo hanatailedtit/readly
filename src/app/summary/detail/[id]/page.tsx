@@ -28,10 +28,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 export default function RecordDetailPage() {
-  const { id } = useParams<{ id: string }>(),
-    router = useRouter(),
-    query = useGetDetailBookSummaryQuery(Number(id)),
-    likes = useGetBookSummaryLikeCountQuery(Number(id)),
+  const { id } = useParams<{ id: string }>();
+  const recordId = Number(id);
+  if (!Number.isSafeInteger(recordId) || recordId < 1)
+    return <p role="alert">올바르지 않은 기록 주소예요.</p>;
+  return <RecordDetail key={id} id={recordId} />;
+}
+
+function RecordDetail({ id }: { id: number }) {
+  const router = useRouter(),
+    query = useGetDetailBookSummaryQuery(id),
+    likes = useGetBookSummaryLikeCountQuery(id),
     like = useAddBookSummaryLikeCountMutation(),
     remove = useDeleteDetailBookSummaryMutation(),
     { data: user } = useGetUserMyInfoQuery(),
@@ -98,7 +105,7 @@ export default function RecordDetailPage() {
                   return;
                 }
                 try {
-                  await like.mutateAsync({ id: Number(id) });
+                  await like.mutateAsync({ id });
                 } catch {
                   toast.error(
                     "좋아요를 저장하지 못했어요. 다시 시도해 주세요.",
@@ -151,7 +158,7 @@ export default function RecordDetailPage() {
               : "책 전체에 대한 기록"}{" "}
             {record.category && `· #${record.category}`}
           </p>
-          <Comments id={Number(id)} />
+          <Comments id={id} />
         </article>
         <aside className="order-1 space-y-4 rounded-sm bg-muted p-4 lg:order-2 lg:p-6">
           <div className="flex gap-4 lg:flex-col lg:items-center">
@@ -177,7 +184,7 @@ export default function RecordDetailPage() {
           </Button>
           <Button asChild className="w-full">
             <Link
-              href={`/summary/create?isbn=${encodeURIComponent(record.isbn)}`}
+              href={`/summary/create?isbn=${encodeURIComponent(record.isbn || record.bookTitle)}`}
             >
               이 책으로 기록 남기기
             </Link>
@@ -193,7 +200,7 @@ export default function RecordDetailPage() {
         pending={remove.isPending}
         onDelete={async () => {
           try {
-            await remove.mutateAsync(Number(id));
+            await remove.mutateAsync(id);
             toast.success("독서 기록을 삭제했어요.");
             router.replace("/records");
           } catch {

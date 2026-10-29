@@ -1,4 +1,8 @@
-import { COMMENT_KEY, BOOK_SUMMARY_KEY } from "@/constants/query-key.constants";
+import {
+  COMMENT_KEY,
+  BOOK_SUMMARY_KEY,
+  isRecordListQuery,
+} from "@/constants/query-key.constants";
 import { BookSummaryItemModel } from "@/model/book/book.model";
 import { toSummaryCommentListModel } from "@/model/comment/comment.dto";
 import {
@@ -18,10 +22,7 @@ export const useCreateSummaryCommentMutation = () => {
         queryClient.invalidateQueries({
           queryKey: [BOOK_SUMMARY_KEY],
           refetchType: "none",
-          predicate: (query) =>
-            ["feed", "monthly", "book-records", "profile"].includes(
-              String(query.queryKey[1]),
-            ),
+          predicate: isRecordListQuery,
         }),
       ]);
     },
@@ -54,10 +55,7 @@ export const useDeleteSummaryCommentMutation = (summaryId: number) => {
         queryClient.invalidateQueries({
           queryKey: [BOOK_SUMMARY_KEY],
           refetchType: "none",
-          predicate: (query) =>
-            ["feed", "monthly", "book-records", "profile"].includes(
-              String(query.queryKey[1]),
-            ),
+          predicate: isRecordListQuery,
         }),
       ]);
     },

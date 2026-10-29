@@ -150,6 +150,8 @@ Node.js 기본 테스트 러너로 외부 서버 없이 데이터 변환과 요�
 | [performance.test.cjs](tests/performance.test.cjs) | 요청 취소, 캐시 재사용, 인증 오류 재시도 방지, 페이지 요청·중복 제거, 댓글 그룹화 |
 | [profile.test.cjs](tests/profile.test.cjs) | 사용자별 기록 조회, 도서·본문 검색, 정렬, 중복 페이지 종료 |
 | [book-model.test.cjs](tests/book-model.test.cjs) | 잘못된 발행일이 섞여도 전체 검색 결과와 메타데이터 보존 |
+| [library-service.test.cjs](tests/library-service.test.cjs) | ISBN이 없는 동명 도서의 저자별 기록 캐시 구분 |
+| [user-service.test.cjs](tests/user-service.test.cjs) | 프로필 변경 후 작성자 정보 캐시 갱신, 사용자 조회 요청 취소 |
 
 ```sh
 npm test                 # 데이터·요청 계층 회귀 테스트

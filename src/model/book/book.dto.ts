@@ -1,7 +1,6 @@
 import { transferStringToDate } from "@/utils/date.utils";
 import { UserInfoDto } from "../user.dto";
 import {
-  BookCreatedRankModel,
   BookDetailSummaryModel,
   BookSummaryItemModel,
 } from "./book.model";
@@ -112,22 +111,6 @@ export const toRecentBookItemModel = (item: RecentBookDto): SearchBookItem => {
     pubdate: item.book_pubdate,
     publisher: item.book_publisher,
     title: item.book_title,
-  };
-};
-
-export type BookCreatedRankDto = BookItemDto & { created_count: number };
-
-export const toBookCreatedRankModel = (
-  item: BookCreatedRankDto,
-  index: number,
-): BookCreatedRankModel => {
-  return {
-    author: item.book_author.replaceAll("^", ", "),
-    image: item.book_image,
-    link: item.book_link,
-    title: item.book_title,
-    count: item.created_count,
-    rank: index + 1,
   };
 };
 

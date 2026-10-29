@@ -61,7 +61,13 @@ export function RecordDirectory() {
       >
         <div className="space-y-2">
           <Label htmlFor="search-type">검색 범위</Label>
-          <Select value={type} onValueChange={setType}>
+          <Select
+            value={type}
+            onValueChange={(value) => {
+              setType(value);
+              list.setPage(1);
+            }}
+          >
             <SelectTrigger id="search-type">
               <SelectValue />
             </SelectTrigger>

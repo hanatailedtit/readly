@@ -22,8 +22,21 @@ export function DeleteDialog({
   title?: string;
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!pending) onOpenChange(next);
+      }}
+    >
+      <DialogContent
+        closeDisabled={pending}
+        onEscapeKeyDown={(e) => {
+          if (pending) e.preventDefault();
+        }}
+        onPointerDownOutside={(e) => {
+          if (pending) e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>삭제한 내용은 되돌릴 수 없어요.</DialogDescription>

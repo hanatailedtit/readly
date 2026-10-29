@@ -15,6 +15,16 @@ import {
 import { safeExternalUrl, formatDate } from "@/lib/records";
 export default function BookDetailPage() {
   const { isbn } = useParams<{ isbn: string }>();
+  let bookKey: string;
+  try {
+    bookKey = decodeURIComponent(isbn);
+  } catch {
+    return <p role="alert">올바르지 않은 도서 주소예요.</p>;
+  }
+  return <BookDetail key={isbn} isbn={bookKey} />;
+}
+
+function BookDetail({ isbn }: { isbn: string }) {
   const lookup = useBookInfo(isbn);
   const book = lookup.data;
   const query = useBookRecords(book ?? undefined);
@@ -32,6 +42,7 @@ export default function BookDetailPage() {
       ),
     [query.data, list.order],
   );
+  const page = Math.min(list.page, Math.max(1, Math.ceil(records.length / 12)));
   if (lookup.isError) return <LoadError retry={lookup.refetch} />;
   if (!book)
     return (
@@ -66,7 +77,7 @@ export default function BookDetailPage() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button asChild>
               <Link
-                href={`/summary/create?isbn=${encodeURIComponent(book.isbn)}`}
+                href={`/summary/create?isbn=${encodeURIComponent(book.isbn || book.title)}`}
               >
                 이 책으로 기록 남기기
               </Link>
@@ -98,12 +109,12 @@ export default function BookDetailPage() {
         ) : (
           <RecordGrid
             loading={query.isLoading}
-            records={records.slice((list.page - 1) * 12, list.page * 12)}
+            records={records.slice((page - 1) * 12, page * 12)}
             view={list.view}
           />
         )}
         <PageNumbers
-          page={list.page}
+          page={page}
           total={records.length}
           onChange={list.setPage}
         />

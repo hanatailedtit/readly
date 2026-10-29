@@ -21,6 +21,7 @@ import {
   groupBooks,
   categoryKeyword,
   bookFromRecord,
+  recordBookKey,
   type CatalogBook,
 } from "@/lib/records";
 
@@ -170,7 +171,7 @@ export function useBookRecords(book?: SearchBookItem) {
     "catalog",
   ]);
   const known = catalogState?.data?.find(
-    (item) => item.isbn === book?.isbn && item.title === book?.title,
+    (item) => book && recordBookKey(item) === recordBookKey(book),
   );
   return useQuery({
     queryKey: [

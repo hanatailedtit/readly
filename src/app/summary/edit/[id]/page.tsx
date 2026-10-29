@@ -6,6 +6,8 @@ import { LoadError } from "@/components/records/record-list";
 export default function EditPage() {
   const { id } = useParams<{ id: string }>(),
     query = useGetDetailBookSummaryQuery(Number(id));
+  if (!Number.isSafeInteger(Number(id)) || Number(id) < 1)
+    return <p role="alert">올바르지 않은 기록 주소예요.</p>;
   if (query.isError) return <LoadError retry={query.refetch} />;
   return query.data ? (
     <RecordEditor key={id} record={query.data} />
